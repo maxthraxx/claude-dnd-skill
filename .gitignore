@@ -1,0 +1,15 @@
+# Runtime files — generated during play, not part of the repo
+display/app.log
+display/app.pid
+display/stats.json
+display/text_log.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# macOS
+.DS_Store
