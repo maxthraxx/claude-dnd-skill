@@ -7,7 +7,7 @@ An unofficial D&D 5e Dungeon Master skill for [Claude Code](https://claude.ai/co
 
 Built for groups who want a real DM experience without needing one at the table.
 
-![Cinematic Display Demo](demo.gif)
+![Cinematic Display Demo](demo-v2.gif)
 
 ---
 
