@@ -548,7 +548,22 @@ Bring a character from a previous campaign (or the global roster) into the curre
 6. Deliver a one-paragraph in-character aside — how does it feel for this character to step into a new world? What do they carry with them?
 
 ### `/dnd level up [name]`
-Read sheet. Run `character.py levelup`. Apply class features for new level. Ask for HP roll or use average. Update `characters/<name>.md`. Update global roster. Narrate the growth.
+1. **XP gate — check this first, before any rolls or choices:**
+   Read the character's current XP and level from their sheet. Compare against the 5e XP thresholds:
+
+   | To reach level | XP required |
+   |----------------|-------------|
+   | 2 | 300 | 3 | 900 | 4 | 2,700 | 5 | 6,500 | 6 | 14,000 |
+   | 7 | 23,000 | 8 | 34,000 | 9 | 48,000 | 10 | 64,000 | 11 | 85,000 |
+   | 12 | 100,000 | 13 | 120,000 | 14 | 140,000 | 15 | 165,000 | 16 | 195,000 |
+   | 17 | 225,000 | 18 | 265,000 | 19 | 305,000 | 20 | 355,000 |
+
+   - **Sufficient XP** → proceed to step 2.
+   - **Insufficient XP** → report the deficit clearly and stop:
+     > *[Name] is Level [X] with [N] XP. Reaching Level [X+1] requires [threshold] XP — [deficit] short. Level up anyway? (DM override)*
+     Only continue if the DM explicitly confirms the override. This prevents silently corrupting character state.
+
+2. Read sheet. Run `character.py levelup`. Apply class features for new level. Ask for HP roll or use average. Update `characters/<name>.md`. Update global roster. Narrate the growth.
 
 ---
 
