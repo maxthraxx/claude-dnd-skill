@@ -597,20 +597,23 @@ def chunk():
     if not raw:
         return "", 204
 
+    is_action = bool(data.get("action"))
     is_player = bool(data.get("player"))
     is_npc    = bool(data.get("npc"))
     is_dice   = bool(data.get("dice"))
     is_tutor  = bool(data.get("tutor"))
 
-    # Player/npc/dice/tutor text comes from send.py (no ANSI/chrome) — light clean only.
+    # Player/npc/dice/tutor/action text comes from send.py (no ANSI/chrome) — light clean only.
     # DM narration may come from wrapper.py — full clean.
-    cleaned = raw.strip() if (is_player or is_npc or is_dice or is_tutor) else _clean(raw)
+    cleaned = raw.strip() if (is_action or is_player or is_npc or is_dice or is_tutor) else _clean(raw)
     if not cleaned.strip():
         return "", 204
 
     payload: dict = {"text": cleaned}
 
-    if is_player:
+    if is_action:
+        payload["action"] = data["action"]
+    elif is_player:
         payload["player"] = data["player"]
     elif is_npc:
         payload["npc"] = data["npc"]
@@ -629,9 +632,11 @@ def chunk():
         if _audio:
             _audio.on_text(cleaned)
 
-    # Store full typed payload so replay preserves player/npc/dice/tutor context
+    # Store full typed payload so replay preserves action/player/npc/dice/tutor context
     log_entry: dict = {"text": cleaned}
-    if is_player:
+    if is_action:
+        log_entry["action"] = data["action"]
+    elif is_player:
         log_entry["player"] = data["player"]
     elif is_npc:
         log_entry["npc"] = data["npc"]

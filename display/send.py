@@ -26,6 +26,11 @@ Usage:
     You could try a Perception check (WIS) to scan the room before acting.
     DNDEND
 
+    # Player action intent — subdued label echoing what the player declared
+    python3 send.py --action "Bob" << 'DNDEND'
+    Attempts to shimmy across the rope to the ship under cover of darkness.
+    DNDEND
+
     # Short inline string
     echo "Short message" | python3 send.py
 """
@@ -66,6 +71,10 @@ def main() -> None:
         "--tutor", action="store_true",
         help="Send as a tutor/learning hint (collapsible parchment block)",
     )
+    parser.add_argument(
+        "--action", metavar="NAME",
+        help="Send as a player action intent — subdued label echoing what the player declared",
+    )
     args = parser.parse_args()
 
     text = sys.stdin.read()
@@ -73,13 +82,15 @@ def main() -> None:
         return
 
     payload: dict = {"text": text}
-    if args.player:
+    if args.action:
+        payload["action"] = args.action
+    elif args.player:
         payload["player"] = args.player
-    if args.npc:
+    elif args.npc:
         payload["npc"] = args.npc
-    if args.dice:
+    elif args.dice:
         payload["dice"] = True
-    if args.tutor:
+    elif args.tutor:
         payload["tutor"] = True
 
     data = json.dumps(payload).encode("utf-8")

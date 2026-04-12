@@ -166,9 +166,44 @@
 
   .player-block p {
     color: #94b8cc;
-    font-style: italic;
     font-size: 0.92em;
     text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+
+  .player-block p em {
+    font-style: italic;
+  }
+
+  /* ── Player action intent block ── */
+  .action-block {
+    margin-bottom: 1.4em;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6em;
+  }
+
+  .action-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(130, 185, 215, 0.5);
+    white-space: nowrap;
+    padding-top: 0.15em;
+    flex-shrink: 0;
+  }
+
+  .action-block p {
+    color: rgba(148, 184, 204, 0.65);
+    font-size: 0.82em;
+    font-style: italic;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    margin: 0;
+    line-height: 1.5;
+    border-left: 1px solid rgba(120, 175, 210, 0.18);
+    padding-left: 0.7em;
   }
 
   /* ── NPC dialogue blocks ── */
@@ -1664,6 +1699,32 @@ function renderPlayerBlock(name, text, isReplay) {
   _reanchorCursor();
 }
 
+// ── Player action intent block ───────────────────────────────────────
+function renderActionBlock(name, text, isReplay) {
+  _flushForBlock();
+
+  const block = document.createElement('div');
+  block.className = 'action-block';
+  if (isReplay) block.style.opacity = '0.45';
+
+  const tag = document.createElement('div');
+  tag.className = 'action-tag';
+  tag.textContent = name;
+  block.appendChild(tag);
+
+  const cleaned = text
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
+    .replace(/\r/g, '')
+    .trim();
+
+  const p = document.createElement('p');
+  p.textContent = cleaned;
+  block.appendChild(p);
+
+  textContent.appendChild(block);
+  _reanchorCursor();
+}
+
 // ── NPC dialogue block ───────────────────────────────────────────────
 function renderNPCBlock(name, text, isReplay) {
   _flushForBlock();
@@ -1775,7 +1836,9 @@ function renderReplayBatch(items) {
   flushNewBlock();
   items.forEach(item => {
     if (!item || !item.text) return;
-    if (item.player) {
+    if (item.action) {
+      renderActionBlock(item.action, item.text, true);
+    } else if (item.player) {
       renderPlayerBlock(item.player, item.text, true);
     } else if (item.npc) {
       renderNPCBlock(item.npc, item.text, true);
@@ -2555,7 +2618,9 @@ function connect() {
       _playSfx(payload.sfx);
     }
     if (payload.text) {
-      if (payload.player) {
+      if (payload.action) {
+        renderActionBlock(payload.action, payload.text);
+      } else if (payload.player) {
         renderPlayerBlock(payload.player, payload.text);
       } else if (payload.npc) {
         renderNPCBlock(payload.npc, payload.text);
