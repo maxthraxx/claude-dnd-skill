@@ -1,15 +1,18 @@
 # DnD DM Display — Cinematic Spectator Screen
 
-Renders your DM session as a cinematic full-screen display on a browser tab,
-which you Chromecast to your TV. You continue typing in the terminal as normal.
+Renders your DM session as a cinematic full-screen display on a browser tab.
+View it on a TV, iPad, tablet, phone, or second monitor — any device on your network.
+You continue typing in the terminal as normal.
 
 ```
 Terminal (you type here)
     ↓ stdout captured by wrapper.py
  Flask on localhost:5001
     ↓ SSE stream
- Browser tab → Chromecast → TV
- (or any LAN device: phone, tablet)
+ Browser tab (any device on your network)
+    TV — Cast tab or screen mirror
+    iPad / tablet — open in Safari or Chrome via LAN
+    Second monitor — open localhost:5001 in a local window
 ```
 
 ---
@@ -44,7 +47,11 @@ http://localhost:5001
 http://<your-machine-ip>:5001
 ```
 
-Chromecast this tab to your TV via Chrome → three-dot menu → Cast → Cast tab.
+**To display on a TV or other device:**
+- **Cast tab** — Chrome → three-dot menu → Cast → Cast tab → select your Chromecast or smart TV
+- **Screen mirror** — macOS Control Centre → Screen Mirroring → Apple TV / AirPlay receiver
+- **iPad / tablet** — start with `--lan`, open `http://<your-ip>:5001` in Safari or Chrome
+- **Second monitor** — drag the browser window to the second display
 
 ### 4. Start your Claude session via the wrapper
 
@@ -165,8 +172,9 @@ python3 $DISPLAY/app.py
 # or for LAN access:
 python3 $DISPLAY/app.py --lan
 
-# Browser — open and Chromecast BEFORE starting your session
-open http://localhost:5001
+# Open the display BEFORE starting your session
+open http://localhost:5001   # same machine
+# or: open http://<your-ip>:5001  (LAN device)
 
 # Terminal 2 — Claude session via wrapper
 python3 $DISPLAY/wrapper.py

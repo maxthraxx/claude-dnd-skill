@@ -3,7 +3,7 @@
 
 > Claude runs the game. You play. The TV shows the story.
 
-An unofficial D&D 5e Dungeon Master skill for [Claude Code](https://claude.ai/code) — persistent campaigns, full 5e mechanics, and an optional cinematic display companion that Chromecasts typewriter narration, dice rolls, and live character stats to your TV while you play from the couch.
+An unofficial D&D 5e Dungeon Master skill for [Claude Code](https://claude.ai/code) — persistent campaigns, full 5e mechanics, and an optional cinematic display companion that streams typewriter narration, dice rolls, and live character stats to any screen while you play.
 
 Built for groups who want a real DM experience without needing one at the table.
 
@@ -13,7 +13,7 @@ Built for groups who want a real DM experience without needing one at the table.
 
 ## What This Is
 
-You run `/dnd load my-campaign` in Claude Code. Claude becomes your DM — rolling dice, voicing NPCs, tracking HP and XP, and running combat. If you have a TV nearby, the **cinematic display companion** puts the narration on the big screen in real time with a typewriter effect, atmospheric backgrounds that shift with the scene, a dynamic sky canvas showing weather and time of day, and a live party stat sidebar. Chromecast a browser tab and everyone on the couch can follow along.
+You run `/dnd load my-campaign` in Claude Code. Claude becomes your DM — rolling dice, voicing NPCs, tracking HP and XP, and running combat. If you have a TV or tablet nearby, the **cinematic display companion** puts the narration on screen in real time — typewriter effect, atmospheric backgrounds that shift with the scene, a dynamic sky canvas, and a live party stat sidebar. Open it on any device on your network and everyone at the table can follow along.
 
 It is not an official Wizards of the Coast product. It uses Claude as the DM engine. It takes the rules seriously and the storytelling even more seriously.
 
@@ -24,7 +24,7 @@ It is not an official Wizards of the Coast product. It uses Claude as the DM eng
 - **Persistent campaigns** — state, NPCs, quests, and characters survive across sessions in plain markdown files
 - **Full D&D 5e mechanics** — initiative, attacks, saving throws, spell slots, XP, levelling up, short/long rests
 - **Atmospheric DM** — dark fantasy tone, distinct NPC voices, hidden rolls, a world that reacts to choices
-- **Cinematic display companion** — typewriter narration on your TV, scene-reactive backgrounds, live party sidebar, Chromecast-ready
+- **Cinematic display companion** — typewriter narration, scene-reactive backgrounds, live party sidebar; cast, mirror, or open on any screen on your network
 - **Dynamic sky canvas** — clouds, sun, moon, and stars rendered in real time from world_time data; transitions with time of day and weather
 - **Browser-side sound effects** — 12 SFX types synthesized on demand (numpy) and played via Web Audio API; works on any device with the browser tab open, including phones on LAN
 - **LAN mode** — serve the display to any device on your local network; token-authenticated write endpoints
@@ -47,8 +47,10 @@ Claude Code CLI  ──→  /dnd commands  ──→  campaign files (~/.claude/
 Optional display pipeline:
   send.py / push_stats.py  ──→  Flask SSE server (localhost:5001)
                                       ↓
-                              Browser tab  ──→  Chromecast  ──→  TV
-                              (or any LAN device: phone, tablet)
+                              Browser tab (any device on your network)
+                                 TV via Cast or screen mirror
+                                 iPad / tablet — open in Safari or Chrome
+                                 Second monitor — open a local browser window
 ```
 
 The Flask server receives narration text, player actions, dice results, and character stats via HTTP POST. It broadcasts everything in real time to connected browsers via Server-Sent Events. The browser renders narration as a typewriter effect over a scene-reactive gradient background, with a dynamic sky layer and a live character sidebar.
@@ -192,9 +194,19 @@ New players can enable an optional guided layer that runs alongside the normal D
 When active, the display companion shows collapsible hint blocks after each scene, decision point, and significant roll:
 
 - **DM Hint** (green border) — skills worth attempting, visible options, what each path might cost
-- **Warning** (amber border) — flags irreversible choices before the player commits: *"This cannot be undone — Han-Ulish warned that moving the stone would be read as an invitation"*
+- **Warning** (amber border) — flags irreversible choices before the player commits
 - **After failed rolls** — brief mechanical explanation of what happened and why
 - **Combat** — reminder of unused bonus actions, reactions, or features available that turn
+
+![Tutor mode intro hint](tutor-hint-intro.png)
+
+Hints can surface contextual NPC and situation knowledge the DM would naturally flag for a new player:
+
+![Tutor hint with NPC context](tutor-hint-npc.png)
+
+Warnings use an amber border to distinguish irreversible or high-stakes choices before the player commits:
+
+![Tutor warning block](tutor-warning.png)
 
 Hint blocks are **collapsed by default** — click or tap the header to expand. Experienced players can ignore them entirely; new players get the scaffolding without it cluttering the screen.
 
@@ -204,7 +216,7 @@ Tutor mode is session-scoped. It does not persist to the next `/dnd load` unless
 
 ## Cinematic Display Companion
 
-An optional local web server (`display/app.py`) that renders DM narration on any screen — designed to be Chromecasted to a TV during play.
+An optional local web server (`display/app.py`) that renders DM narration on any screen — TV, tablet, phone, or second monitor.
 
 ### Setup
 
@@ -226,11 +238,22 @@ python3 ~/.claude/skills/dnd/display/app.py --lan
 
 In LAN mode a token is generated and stored at `display/.token`. The `send.py` and `push_stats.py` scripts read this token automatically — no manual configuration needed.
 
+### Viewing Options
+
+Open the display URL in a browser, then choose how to show it:
+
+| Option | How |
+|--------|-----|
+| **TV — Cast tab** | Chrome → three-dot menu → Cast → Cast tab; select your Chromecast or smart TV |
+| **TV — Screen mirror** | macOS: Control Centre → Screen Mirroring → Apple TV / AirPlay receiver |
+| **iPad / tablet** | Start with `--lan`, open `http://<your-ip>:5001` in Safari or Chrome; works in landscape |
+| **Second monitor** | Open `http://localhost:5001` in a browser window and drag it to the second display |
+
 ```bash
-# Browser — open and Chromecast before starting your session
+# Same machine
 open http://localhost:5001
 
-# From another device on your LAN:
+# LAN device (iPad, phone, another computer)
 open http://<your-machine-ip>:5001
 ```
 
@@ -411,7 +434,7 @@ If `sheet` is omitted, the modal still opens but shows only the stats visible in
 
 ### Replay Buffer
 
-The server buffers the last 60 text chunks to disk (`text_log.json`). Reconnecting browsers (Chromecast drop, tab refresh) replay the full session history automatically — no narration is lost.
+The server buffers the last 60 text chunks to disk (`text_log.json`). Reconnecting browsers (connection drop, Cast interruption, tab refresh) replay the full session history automatically — no narration is lost.
 
 ---
 
