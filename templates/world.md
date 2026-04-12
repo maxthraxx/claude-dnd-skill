@@ -130,6 +130,30 @@
 
 ---
 
+## Adventure Nodes
+
+*Situations, not plots. Each node has a goal at stake and multiple ways in. Record what happens if the party never arrives — that drives Faction Moves in state.md.*
+
+### Node 1 — <Title>
+- **Situation:** <what's here and what's at stake>
+- **Ways in:** <how the party might reach or trigger this>
+- **If party never arrives:** <what changes in the world — faction move, NPC decision, opportunity closes>
+- **Connections:** <which other nodes this links to>
+
+### Node 2 — <Title>
+- **Situation:**
+- **Ways in:**
+- **If party never arrives:**
+- **Connections:**
+
+### Node 3 — <Title>
+- **Situation:**
+- **Ways in:**
+- **If party never arrives:**
+- **Connections:**
+
+---
+
 ## Quest Seed Bank
 
 - **Seed 1 — <Title>:** <Hook. Complication. Possible resolution. Reward.>

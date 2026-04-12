@@ -20,10 +20,17 @@
 
 ## Open Threads & Rumours
 
+## Faction Moves
+*Updated at the end of each session — what each active faction did while the party was occupied.*
+*(none yet)*
+
 ## Recent Events
 *(Session 1 pending)*
 
 ## Active Combat
 *(none)*
+
+## Session Flags
+*(tutor_mode, etc. — session-scoped flags set via /dnd commands)*
 
 ## DM Notes (hidden from players)
