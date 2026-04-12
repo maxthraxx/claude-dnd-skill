@@ -732,7 +732,7 @@ Send the roll line **immediately after rolling**, before writing the narration r
 
 *NPC dialogue* — when an NPC speaks more than a line, send it as a distinct block with `--npc <name>` for amber styling, separate from DM narration:
 ```bash
-python3 ~/.claude/skills/dnd/display/send.py --npc "Vesna" << 'DNDEND'
+python3 ~/.claude/skills/dnd/display/send.py --npc "Osk" << 'DNDEND'
 "I've been waiting for you. Longer than you know."
 DNDEND
 ```
@@ -750,28 +750,44 @@ DNDEND
 ```
 **Everything goes to the display** — include the closing prompt ("What do you do?"), inventory checks, and roll outcome summaries in the same block. Nothing written after the bash call reaches the display. The delimiter `DNDEND` is safe as long as the narration doesn't literally contain that string on its own line.
 
-**Batching rule — one Bash call per response:** Never fire a separate Bash tool call for each `send.py` invocation. Each individual Bash call appears as a visible `⏺ Bash(...)` block in the terminal, which fragments the transcript the player is reading. Instead:
+**Batching rule — one Bash call per response, multiple typed sends inside it:**
 
-1. Write the **full response as text** (narration, NPC dialogue, dice results, closing prompt — everything). The player reads this in the terminal.
-2. At the very end, issue **one Bash call** that runs all `send.py` commands for that response in sequence within a single shell script:
+The terminal shows a visible `⏺ Bash(...)` block for every Bash tool call. Multiple calls = fragmented CLI transcript. The fix: issue exactly **one Bash tool call per response**, but run multiple `send.py` commands inside that single shell script — one per display block, each with its own type flag.
 
+**NEVER** combine all text into a single `send.py` call with no flag — that sends everything as one undifferentiated narration block and loses all styled distinctions (player action box, amber NPC dialogue, gold dice line).
+
+**Correct pattern — one Bash tool call, multiple typed sends:**
 ```bash
-# All sends for this response — one Bash call, not six
-python3 ~/.claude/skills/dnd/display/send.py --player Kat << 'DNDEND'
-[player action]
+# 1. Player action (blue-white name header + normal text)
+python3 ~/.claude/skills/dnd/display/send.py --player Serath << 'DNDEND'
+Serath draws her dagger and moves toward the gate.
 DNDEND
+
+# 2. Dice result (gold inline line) — one per roll or roll group
 python3 ~/.claude/skills/dnd/display/send.py --dice << 'DNDEND'
-Kat — Stealth: d20 + 3 = 14  →  Clean.
+Serath — Stealth: d20+7 = 21 → Clean.
 DNDEND
+
+# 3. DM narration (main typewriter text)
 python3 ~/.claude/skills/dnd/display/send.py << 'DNDEND'
-[full narration]
+The gate swings inward on silence. Beyond it: cold stone, darkness, the mineral smell of something very old.
 DNDEND
-python3 ~/.claude/skills/dnd/display/send.py --npc Vesna << 'DNDEND'
-"I didn't see anything."
+
+# 4. NPC dialogue (amber border + amber name header)
+python3 ~/.claude/skills/dnd/display/send.py --npc "Innkeeper" << 'DNDEND'
+"You shouldn't have come back here."
 DNDEND
 ```
 
-This keeps the player's terminal clean while ensuring the display receives every block in the correct order.
+**Block order per response:**
+1. `--player` — the player's action (cleaned up, one or two sentences)
+2. `--dice` — each roll result, immediately after rolling (before narration)
+3. plain — DM narration (full prose, closing prompt included)
+4. `--npc NAME` — any NPC dialogue longer than one interjected line
+
+Brief NPC lines that are already embedded in the narration prose don't need a separate `--npc` block. Use `--npc` when the NPC is delivering a full speech or important statement that warrants its own amber box.
+
+This keeps the player's terminal clean (one `⏺ Bash(...)` block) while the display receives every block in the correct order with full styling.
 
 **Scripting and rolls:** Run scripts, rolls, and simple expansions immediately — no "Do you want to proceed?" prompts. These are routine DM actions. Only pause for genuinely consequential operations (e.g. deleting campaign data).
 

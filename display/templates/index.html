@@ -499,9 +499,8 @@
     display: none;
     position: fixed;
     inset: 0;
-    z-index: 100;
-    background: rgba(0,0,0,0.72);
-    backdrop-filter: blur(3px);
+    z-index: 9999;
+    background: rgba(0,0,0,0.78);
     align-items: center;
     justify-content: center;
   }
@@ -1929,9 +1928,6 @@ function _buildPlayerCard(p, solo) {
     card.appendChild(featEl);
   }
 
-  // Click → open character sheet modal
-  card.addEventListener('click', () => openSheet(p.name));
-
   // Ability scores — only for solo play
   if (solo && p.ability_scores) {
     const ab = p.ability_scores;
@@ -2163,6 +2159,12 @@ function closeSheet() {
 document.getElementById('sheet-close').addEventListener('click', closeSheet);
 document.getElementById('sheet-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('sheet-modal')) closeSheet();
+});
+
+// Delegated listener — catches clicks on any .sb-player card even after DOM rebuilds
+document.getElementById('sidebar').addEventListener('click', function(e) {
+  const card = e.target.closest('.sb-player[data-player-name]');
+  if (card) openSheet(card.dataset.playerName);
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeSheet();
