@@ -41,7 +41,8 @@ It is not an official Wizards of the Coast product. It uses Claude as the DM eng
 - **LAN mode** — serve the display to any device on your local network; token-authenticated write endpoints
 - **17 scene types** — auto-detected from narration keywords — tavern, dungeon, ocean, crypt, arcane, glacier, and more
 - **Clickable character sheets** — tap any sidebar card to open a full character sheet modal (attacks, features, inventory); works on phones and tablets via LAN
-- **Tutor / learning mode** — collapsible hint blocks and consequence warnings on the display; collapsed by default, opt-in per session
+- **DM Help button** — on-demand hint generation; click the button on the display and a contextual hint or warning appears within seconds, generated from the current scene — no per-turn token overhead
+- **Tutor / learning mode** — enable per-session for automatic hint blocks after every scene, decision point, and roll; collapsed by default
 - **Couch co-op** — multiple characters, shared display, turn order visible to everyone in the room
 - **Combat tracker** — auto-rolled initiative, `▶` turn pointer, HP bars, inline dice math sent to display
 - **8 helper scripts** — dice, ability scores, combat, character stats, conditions/tracker, calendar, SRD data pull, SRD lookup
@@ -193,33 +194,36 @@ Long rests advance the in-world clock in `state.md`.
 
 ---
 
-## Tutor / Learning Mode
+## DM Help & Tutor Mode
 
-New players can enable an optional guided layer that runs alongside the normal DM narration:
+There are two ways to surface hints and warnings on the display — an on-demand button and a per-session automatic mode.
+
+### DM Help Button
+
+A **◈ DM Help** button sits in the bottom-right corner of the display at all times. Click it and within a few seconds a contextual hint or warning is generated from the current scene and pushed to the display — no CLI command needed, no per-turn token overhead.
+
+The button reads the last 8 display blocks and the current campaign state, calls Claude in non-interactive mode, and sends the result as a hint block via the normal SSE pipeline. The button shows "Thinking…" while the request is in flight and resets automatically when the block arrives.
+
+**Deduplication:** multiple players clicking the button simultaneously only triggers one execution — subsequent clicks while a request is in-flight return immediately without spawning a second process.
+
+Hint blocks are **collapsed by default** — click or tap the header to expand. Warnings use an amber border:
+
+- **DM Hint** (◈, collapsible) — skills worth attempting, visible options, what each path might cost
+- **Warning** (⚠, amber border) — flags irreversible choices before the player commits
+
+![Tutor mode intro hint](tutor-hint-intro.png)
+![Tutor warning block](tutor-warning.png)
+
+### Tutor / Learning Mode
+
+For new players who want continuous guidance, enable per-session tutor mode:
 
 ```
 /dnd tutor on    # enable for this session
 /dnd tutor off   # disable
 ```
 
-When active, the display companion shows collapsible hint blocks after each scene, decision point, and significant roll:
-
-- **DM Hint** (green border) — skills worth attempting, visible options, what each path might cost
-- **Warning** (amber border) — flags irreversible choices before the player commits
-- **After failed rolls** — brief mechanical explanation of what happened and why
-- **Combat** — reminder of unused bonus actions, reactions, or features available that turn
-
-![Tutor mode intro hint](tutor-hint-intro.png)
-
-Hints can surface contextual NPC and situation knowledge the DM would naturally flag for a new player:
-
-![Tutor hint with NPC context](tutor-hint-npc.png)
-
-Warnings use an amber border to distinguish irreversible or high-stakes choices before the player commits:
-
-![Tutor warning block](tutor-warning.png)
-
-Hint blocks are **collapsed by default** — click or tap the header to expand. Experienced players can ignore them entirely; new players get the scaffolding without it cluttering the screen.
+When active, hint blocks are automatically appended after every scene, decision point, and significant roll — no button needed. This adds ~10–20% token overhead per turn. Use the DM Help button instead if you want hints on-demand without the ongoing cost.
 
 Tutor mode is session-scoped. It does not persist to the next `/dnd load` unless set again.
 
@@ -531,6 +535,7 @@ python3 scripts/character.py xp --level 2 --gained 150
 │   ├── wrapper.py            # PTY wrapper — auto-captures Claude CLI output
 │   ├── send.py               # Direct send for narration/dice/player actions
 │   ├── push_stats.py         # Character stats, combat turn order, world_time
+│   ├── dm_help.py            # On-demand DM hint generator (DM Help button)
 │   ├── start-display.sh      # One-command display startup
 │   ├── requirements.txt      # flask, flask-cors, numpy
 │   └── templates/

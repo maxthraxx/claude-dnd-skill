@@ -35,6 +35,7 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
 1. Ask: *"Start the cinematic display companion? [y/n]"*
    - Same display start/LAN flow as `/dnd new` step 1.
    - Clear previous transcript: `curl -s -X POST http://localhost:5001/clear`
+   - Register active campaign for DM Help: `echo "<campaign-name>" > ~/.claude/skills/dnd/display/.campaign`
 2. Read SKILL-scripts.md (for script syntax this session)
 3. Read state.md, world.md, npcs.md (index only — **do NOT read npcs-full.md or world-seeds.md at load**), and all characters/*.md
 4. Push full party stats to display sidebar with `--replace-players` (clears stale characters from previous campaigns). Also push `--world-time` with date/time/season/weather from state.md.

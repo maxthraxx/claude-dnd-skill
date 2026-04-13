@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="dnd-token" content="{{ lan_token }}">
 <title>DnD — Dungeon Master</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -316,8 +317,6 @@
   }
 
   /* Consequence / warning variant */
-  .tutor-block.tutor-hidden { display: none; }
-
   .tutor-block.tutor-warning {
     border-color: rgba(200, 140, 60, 0.25);
     border-left-color: rgba(200, 140, 60, 0.6);
@@ -812,26 +811,7 @@
   .sm-rel-note { font-size: 11px; color: rgba(200,185,150,0.5); line-height: 1.45; }
 
   /* ── Clickable sheet items ── */
-  .sm-clickable { cursor: pointer; transition: color 0.15s, border-color 0.15s, opacity 0.15s; }
-  .sm-clickable:hover { opacity: 0.78; }
-
-  /* ── Description tooltip ── */
-  #desc-tooltip {
-    position: fixed; z-index: 99999; max-width: 300px;
-    background: rgba(6,5,3,0.97);
-    border: 1px solid rgba(180,140,60,0.3); border-radius: 3px;
-    padding: 10px 13px; box-shadow: 0 4px 24px rgba(0,0,0,0.7);
-    display: none; pointer-events: none;
-    animation: tooltipIn 0.12s ease;
-  }
-  @keyframes tooltipIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
-  #desc-tooltip.visible { display: block; }
-  .desc-tt-term {
-    font-family: 'Cinzel', serif; font-size: 9.5px; letter-spacing: 1.5px;
-    text-transform: uppercase; color: rgba(200,165,80,0.9); margin-bottom: 6px;
-  }
-  .desc-tt-body { font-size: 11px; color: rgba(200,185,150,0.78); line-height: 1.55; }
-  .desc-tt-body.loading { color: rgba(200,185,150,0.35); font-style: italic; }
+  .sm-clickable { cursor: default; }
 
   /* ── Turn order section ── */
   #sb-turn-section {
@@ -948,6 +928,32 @@
   }
   #audio-controls:hover { opacity: 0.85; }
 
+  /* ── DM Help button ── */
+  #dm-help-btn {
+    position: fixed;
+    bottom: 22px; right: 24px;
+    z-index: 6;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(200,165,80,0.82);
+    background: rgba(20,14,6,0.55);
+    border: 1px solid rgba(180,140,60,0.5);
+    border-radius: 3px;
+    padding: 6px 12px;
+    cursor: pointer;
+    opacity: 1;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    pointer-events: auto;
+    user-select: none;
+    box-shadow: 0 0 6px rgba(180,140,60,0.15);
+  }
+  #dm-help-btn:hover  { color: rgba(220,185,100,1); border-color: rgba(210,170,80,0.85); background: rgba(30,20,8,0.75); box-shadow: 0 0 10px rgba(180,140,60,0.3); }
+  #dm-help-btn.pending { color: rgba(180,140,60,0.7); border-color: rgba(180,140,60,0.4); cursor: default; box-shadow: none; }
+  #dm-help-btn.locked { color: rgba(180,90,60,0.85); border-color: rgba(180,90,60,0.5); }
+  #dm-help-btn:disabled { pointer-events: none; }
+
   .audio-row {
     display: flex;
     align-items: center;
@@ -1028,17 +1034,10 @@
     <span class="audio-label">Sound Effects</span>
     <div class="toggle-track" id="sfx-track"><div class="toggle-thumb"></div></div>
   </div>
-  <div class="audio-row" id="tutor-row" title="Show DM hints and warnings">
-    <span class="audio-label">DM Hints</span>
-    <div class="toggle-track" id="tutor-track"><div class="toggle-thumb"></div></div>
-  </div>
 </div>
 
-<!-- Description tooltip — populated by Haiku lookup on click -->
-<div id="desc-tooltip">
-  <div class="desc-tt-term"></div>
-  <div class="desc-tt-body"></div>
-</div>
+<!-- DM Help — on-demand hint button -->
+<button id="dm-help-btn" title="Request a DM hint for the current scene">◈ DM Help</button>
 
 <!-- Character sheet modal (click any player card in the sidebar to open) -->
 <div id="sheet-modal">
@@ -1051,14 +1050,14 @@
 <!-- Character sidebar -->
 <div id="sidebar">
   <!-- Player cards are injected here by updateStats() -->
-  <!-- Faction standings — injected by updateStats() when factions data is present -->
-  <div id="sb-factions" style="display:none">
-    <div class="sb-factions-header">Factions</div>
-  </div>
   <!-- Turn order section (shown only during combat) -->
   <div id="sb-turn-section" style="display:none">
     <div class="sb-turn-header">Round <span id="sb-round">1</span></div>
     <div id="sb-turn-list"></div>
+  </div>
+  <!-- Faction standings — injected by updateStats() when factions data is present -->
+  <div id="sb-factions" style="display:none">
+    <div class="sb-factions-header">Factions</div>
   </div>
 </div>
 
@@ -1917,7 +1916,7 @@ function renderTutorBlock(text, isReplay) {
   const isWarning = /^(⚠|WARNING[:\s])/i.test(text.trim());
 
   const block = document.createElement('div');
-  block.className = 'tutor-block' + (isWarning ? ' tutor-warning' : '') + (_tutorOn ? '' : ' tutor-hidden');
+  block.className = 'tutor-block' + (isWarning ? ' tutor-warning' : '');
   if (isReplay) block.style.opacity = '0.65';
 
   // Clickable header row
@@ -1949,6 +1948,10 @@ function renderTutorBlock(text, isReplay) {
 
   textContent.appendChild(block);
   _reanchorCursor();
+
+  // Reset DM Help button — hint arrived, execution complete
+  clearTimeout(_helpResetTimer);
+  _dmHelpReset();
 }
 
 // ── Replay batch (reconnect / session resume) ─────────────────────────
@@ -2385,9 +2388,8 @@ function openSheet(name) {
     sheet.attacks.forEach(a => {
       const tr = document.createElement('tr');
       const nameCell = document.createElement('td');
-      nameCell.className = 'atk-name sm-clickable';
+      nameCell.className = 'atk-name';
       nameCell.textContent = a.name || '—';
-      nameCell.addEventListener('click', e => _showTooltip(a.name || '—', 'attack', e));
       tr.appendChild(nameCell);
       tr.insertAdjacentHTML('beforeend',
         `<td>${a.bonus||'—'}</td><td>${a.damage||'—'}</td>
@@ -2425,9 +2427,8 @@ function openSheet(name) {
       grid.className = 'sm-spell-grid';
       sp.cantrips.forEach(s => {
         const tag = document.createElement('span');
-        tag.className = 'sm-spell-tag cantrip sm-clickable';
+        tag.className = 'sm-spell-tag cantrip';
         tag.textContent = s;
-        tag.addEventListener('click', e => _showTooltip(s, 'spell', e));
         grid.appendChild(tag);
       });
       content.appendChild(grid);
@@ -2441,9 +2442,8 @@ function openSheet(name) {
       grid.className = 'sm-spell-grid';
       sp.prepared.forEach(s => {
         const tag = document.createElement('span');
-        tag.className = 'sm-spell-tag sm-clickable';
+        tag.className = 'sm-spell-tag';
         tag.textContent = s;
-        tag.addEventListener('click', e => _showTooltip(s, 'spell', e));
         grid.appendChild(tag);
       });
       content.appendChild(grid);
@@ -2461,9 +2461,8 @@ function openSheet(name) {
       const el = document.createElement('div');
       el.className = 'sm-feature';
       const nameEl = document.createElement('div');
-      nameEl.className = 'sm-feature-name sm-clickable';
+      nameEl.className = 'sm-feature-name';
       nameEl.textContent = f.name;
-      nameEl.addEventListener('click', e => _showTooltip(f.name, 'feature', e));
       const textEl = document.createElement('div');
       textEl.className = 'sm-feature-text';
       textEl.textContent = f.text;
@@ -2484,9 +2483,7 @@ function openSheet(name) {
     list.className = 'sm-inventory-list';
     sheet.inventory.forEach(item => {
       const li = document.createElement('li');
-      li.className = 'sm-clickable';
       li.textContent = item;
-      li.addEventListener('click', e => _showTooltip(item, 'item', e));
       list.appendChild(li);
     });
     content.appendChild(list);
@@ -2661,76 +2658,60 @@ let _currentTurnOrder = null;
 // user gesture that unlocks AudioContext.
 // ═══════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════════
-// DESCRIPTION LOOKUP — Haiku via /lookup; double-cached (server + browser)
-// ═══════════════════════════════════════════════════════════════════
 
-const _descCache   = new Map();   // key: "context:term" → description string
-const _descTooltip = document.getElementById('desc-tooltip');
-const _descTerm    = _descTooltip.querySelector('.desc-tt-term');
-const _descBody    = _descTooltip.querySelector('.desc-tt-body');
+const _sfxTrack = document.getElementById('sfx-track');
+let _sfxOn = false;
 
-function _positionTooltip(e) {
-  const W = 300, H = 140;
-  let x = e.clientX + 16, y = e.clientY + 16;
-  if (x + W > window.innerWidth  - 8) x = e.clientX - W - 16;
-  if (y + H > window.innerHeight - 8) y = e.clientY - H - 16;
-  _descTooltip.style.left = x + 'px';
-  _descTooltip.style.top  = y + 'px';
+// ── DM Help button ──────────────────────────────────────────────────
+const _dmHelpBtn = document.getElementById('dm-help-btn');
+let _helpPending = false;
+let _helpResetTimer = null;
+
+function _dmHelpReset() {
+  _helpPending = false;
+  _dmHelpBtn.disabled = false;
+  _dmHelpBtn.classList.remove('pending', 'locked');
+  _dmHelpBtn.textContent = '◈ DM Help';
 }
 
-function _hideTooltip() { _descTooltip.classList.remove('visible'); }
-
-async function _showTooltip(term, context, e) {
-  e.stopPropagation();
-  _descTerm.textContent = term;
-  _descBody.textContent = 'Looking up…';
-  _descBody.classList.add('loading');
-  _descTooltip.classList.add('visible');
-  _positionTooltip(e);
-
-  const key = `${context}:${term.toLowerCase()}`;
-  if (_descCache.has(key)) {
-    _descBody.textContent = _descCache.get(key);
-    _descBody.classList.remove('loading');
-    return;
-  }
+_dmHelpBtn.addEventListener('click', async () => {
+  if (_helpPending) return;
+  _helpPending = true;
+  _dmHelpBtn.disabled = true;
+  _dmHelpBtn.classList.add('pending');
+  _dmHelpBtn.textContent = '◈ Thinking…';
 
   try {
-    const r = await fetch('/lookup', {
+    const res = await fetch('/help-request', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ term, context }),
+      headers: _dndToken ? { 'X-DND-Token': _dndToken } : {},
     });
-    const data = await r.json();
-    const desc = data.description || '—';
-    _descCache.set(key, desc);
-    _descBody.textContent = desc;
+    if (res.status === 409) {
+      // Another request already running
+      _dmHelpBtn.classList.remove('pending');
+      _dmHelpBtn.classList.add('locked');
+      _dmHelpBtn.textContent = '◈ Running…';
+      // Auto-reset when the tutor block arrives (see renderTutorBlock)
+      // Safety timeout in case it never arrives
+      clearTimeout(_helpResetTimer);
+      _helpResetTimer = setTimeout(_dmHelpReset, 20000);
+    } else if (res.status === 202) {
+      // Accepted — wait for the tutor SSE block to arrive
+      // renderTutorBlock will call _dmHelpReset()
+      clearTimeout(_helpResetTimer);
+      _helpResetTimer = setTimeout(_dmHelpReset, 20000);
+    } else {
+      _dmHelpReset();
+    }
   } catch (_) {
-    _descBody.textContent = 'Lookup unavailable.';
-  }
-  _descBody.classList.remove('loading');
-}
-
-// Hide tooltip when clicking outside clickable items
-document.addEventListener('click', e => {
-  if (!e.target.closest('.sm-clickable') && !e.target.closest('#desc-tooltip')) {
-    _hideTooltip();
+    _dmHelpReset();
   }
 });
 
-const _sfxTrack   = document.getElementById('sfx-track');
-const _tutorTrack = document.getElementById('tutor-track');
-let _sfxOn   = false;
-let _tutorOn = false;
+// Read token from meta tag injected by Flask (LAN mode)
+const _dndTokenMeta = document.querySelector('meta[name="dnd-token"]');
+const _dndToken = _dndTokenMeta ? _dndTokenMeta.getAttribute('content') : null;
 
-document.getElementById('tutor-row').addEventListener('click', () => {
-  _tutorOn = !_tutorOn;
-  _setTrack(_tutorTrack, _tutorOn);
-  document.querySelectorAll('.tutor-block').forEach(el => {
-    _tutorOn ? el.classList.remove('tutor-hidden') : el.classList.add('tutor-hidden');
-  });
-});
 let _actx   = null;
 let _sfxCache = {};
 

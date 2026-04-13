@@ -19,6 +19,7 @@ import os
 import queue
 import re
 import secrets
+import subprocess
 import sys
 import threading
 from collections import deque
@@ -38,6 +39,8 @@ except Exception:
     _audio = None   # type: ignore
 
 LOG_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/text_log.json")
+HELP_LOCK   = os.path.expanduser("~/.claude/skills/dnd/display/.help-lock")
+CAMP_FILE   = os.path.expanduser("~/.claude/skills/dnd/display/.campaign")
 STATS_FILE  = os.path.expanduser("~/.claude/skills/dnd/display/stats.json")
 TOKEN_FILE  = os.path.expanduser("~/.claude/skills/dnd/display/.token")
 
@@ -580,7 +583,8 @@ def _broadcast(payload: dict) -> None:
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    # Pass LAN token to template so the browser can authenticate /help-request
+    return render_template("index.html", lan_token=_lan_token or "")
 
 
 @app.route("/ping")
@@ -735,53 +739,6 @@ def audio_sfx(name):
                     headers={"Cache-Control": "public, max-age=3600"})
 
 
-# ─── Description lookup (Haiku) ──────────────────────────────────────────────
-# Server-side cache prevents duplicate Haiku calls across multiple LAN clients.
-# Browser-side cache (in index.html) prevents repeated server hits from the same viewer.
-
-_description_cache: dict = {}
-
-@app.route("/lookup", methods=["POST"])
-def lookup():
-    """Look up a D&D 5e term via Haiku. Cached server-side by context:term key."""
-    data = request.get_json(silent=True) or {}
-    term    = data.get("term", "").strip()
-    context = data.get("context", "item")   # spell | item | feature | attack
-
-    if not term:
-        return {"error": "no term"}, 400
-
-    cache_key = f"{context}:{term.lower()}"
-    if cache_key in _description_cache:
-        return _description_cache[cache_key]
-
-    context_map = {
-        "spell":   "spell",
-        "item":    "item, weapon, or piece of armor",
-        "feature": "class feature, racial trait, or ability",
-        "attack":  "attack or weapon",
-    }
-    thing = context_map.get(context, "game element")
-
-    try:
-        import anthropic
-        client = anthropic.Anthropic()
-        response = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=200,
-            messages=[{"role": "user", "content":
-                f"Describe the D&D 5e {thing} '{term}' in 2-3 sentences. "
-                f"Cover what it does and its key mechanics. Be concise and direct. No preamble."}],
-        )
-        description = response.content[0].text.strip()
-    except Exception:
-        description = "Description unavailable."
-
-    result = {"term": term, "description": description}
-    _description_cache[cache_key] = result
-    return result
-
-
 @app.route("/clear", methods=["POST"])
 def clear():
     """Wipe text log AND stats, broadcast clear to all connected browsers.
@@ -803,6 +760,44 @@ def clear():
             pass
     _broadcast({"clear": True})
     return "", 204
+
+
+@app.route("/help-request", methods=["POST"])
+def help_request():
+    """Spawn dm_help.py to generate and send an on-demand DM hint.
+
+    Protected by an O_EXCL lock file — concurrent requests return 409
+    so multiple players clicking the button never duplicates execution.
+    Lock is released by dm_help.py in its finally block.
+    """
+    if not _token_ok():
+        return "Forbidden", 403
+
+    # Atomic lock: O_EXCL fails if file already exists — no race condition
+    try:
+        fd = os.open(HELP_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.close(fd)
+    except FileExistsError:
+        return "Already running", 409
+
+    # Read active campaign name
+    try:
+        campaign = open(CAMP_FILE).read().strip()
+    except FileNotFoundError:
+        os.unlink(HELP_LOCK)
+        return "No active campaign", 400
+
+    if not campaign:
+        os.unlink(HELP_LOCK)
+        return "No active campaign", 400
+
+    dm_help_py = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dm_help.py")
+    subprocess.Popen(
+        [sys.executable, dm_help_py, "--campaign", campaign],
+        close_fds=True,
+        start_new_session=True,
+    )
+    return "", 202
 
 
 @app.route("/stream")
