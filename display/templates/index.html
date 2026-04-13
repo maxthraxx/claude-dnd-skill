@@ -316,6 +316,8 @@
   }
 
   /* Consequence / warning variant */
+  .tutor-block.tutor-hidden { display: none; }
+
   .tutor-block.tutor-warning {
     border-color: rgba(200, 140, 60, 0.25);
     border-left-color: rgba(200, 140, 60, 0.6);
@@ -948,6 +950,10 @@
   <div class="audio-row" id="sfx-row" title="Sound effects (triggered by narration)">
     <span class="audio-label">Sound Effects</span>
     <div class="toggle-track" id="sfx-track"><div class="toggle-thumb"></div></div>
+  </div>
+  <div class="audio-row" id="tutor-row" title="Show DM hints and warnings">
+    <span class="audio-label">DM Hints</span>
+    <div class="toggle-track" id="tutor-track"><div class="toggle-thumb"></div></div>
   </div>
 </div>
 
@@ -1824,7 +1830,7 @@ function renderTutorBlock(text, isReplay) {
   const isWarning = /^(⚠|WARNING[:\s])/i.test(text.trim());
 
   const block = document.createElement('div');
-  block.className = 'tutor-block' + (isWarning ? ' tutor-warning' : '');
+  block.className = 'tutor-block' + (isWarning ? ' tutor-warning' : '') + (_tutorOn ? '' : ' tutor-hidden');
   if (isReplay) block.style.opacity = '0.65';
 
   // Clickable header row
@@ -2473,8 +2479,18 @@ let _currentTurnOrder = null;
 // user gesture that unlocks AudioContext.
 // ═══════════════════════════════════════════════════════════════════
 
-const _sfxTrack = document.getElementById('sfx-track');
-let _sfxOn  = false;
+const _sfxTrack   = document.getElementById('sfx-track');
+const _tutorTrack = document.getElementById('tutor-track');
+let _sfxOn   = false;
+let _tutorOn = false;
+
+document.getElementById('tutor-row').addEventListener('click', () => {
+  _tutorOn = !_tutorOn;
+  _setTrack(_tutorTrack, _tutorOn);
+  document.querySelectorAll('.tutor-block').forEach(el => {
+    _tutorOn ? el.classList.remove('tutor-hidden') : el.classList.add('tutor-hidden');
+  });
+});
 let _actx   = null;
 let _sfxCache = {};
 
