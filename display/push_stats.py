@@ -81,6 +81,8 @@ def main() -> None:
                         help="Spell being concentrated on (requires --player); empty string clears")
     parser.add_argument("--spell-slots", metavar="JSON",
                         help='Spell slots per level: {"1":{"used":1,"max":4},...} (requires --player)')
+    parser.add_argument("--sheet", metavar="JSON",
+                        help='Full character sheet data: {"attacks":[...],"spells":{...},"features":[...],"inventory":[...]} (requires --player)')
     parser.add_argument("--factions", metavar="JSON",
                         help='Party faction standings: [{"name":"Pale Court","standing":"Suspicious"},...]; [] clears')
     parser.add_argument("--turn-order", metavar="JSON",
@@ -110,7 +112,7 @@ def main() -> None:
     # ── Per-player shorthands ──────────────────────────────────────────────────
     if args.hp or args.xp or args.second_wind is not None \
             or args.conditions is not None or args.concentrate is not None \
-            or args.spell_slots is not None:
+            or args.spell_slots is not None or args.sheet is not None:
         if not args.player:
             print("--hp / --xp / --second-wind / --conditions / --concentrate require --player NAME",
                   file=sys.stderr)
@@ -135,6 +137,12 @@ def main() -> None:
                 player_update["spell_slots"] = json.loads(args.spell_slots)
             except json.JSONDecodeError as e:
                 print(f"Invalid spell-slots JSON: {e}", file=sys.stderr)
+                sys.exit(1)
+        if args.sheet is not None:
+            try:
+                player_update["sheet"] = json.loads(args.sheet)
+            except json.JSONDecodeError as e:
+                print(f"Invalid sheet JSON: {e}", file=sys.stderr)
                 sys.exit(1)
         payload.setdefault("players", []).append(player_update)
 

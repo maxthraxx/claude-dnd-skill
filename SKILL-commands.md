@@ -38,7 +38,18 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
    - Register active campaign for DM Help: `echo "<campaign-name>" > ~/.claude/skills/dnd/display/.campaign`
 2. Read SKILL-scripts.md (for script syntax this session)
 3. Read state.md, world.md, npcs.md (index only — **do NOT read npcs-full.md or world-seeds.md at load**), and all characters/*.md
-4. Push full party stats to display sidebar with `--replace-players` (clears stale characters from previous campaigns). Also push `--world-time` with date/time/season/weather from state.md.
+4. Push full party stats to display sidebar with `--replace-players` (clears stale characters from previous campaigns). For each character, include `--sheet <JSON>` built from the character file (attacks, spells, features, inventory). Also push `--world-time` with date/time/season/weather from state.md.
+
+   Sheet JSON structure:
+   ```json
+   {
+     "attacks": [{"name":"Rapier","bonus":"+5","damage":"1d8+3","type":"Piercing","notes":"Finesse"}],
+     "spells": {"slots":"3/3","save_dc":13,"attack_bonus":"+5","cantrips":["Shillelagh"],"prepared":["Entangle","Healing Word"]},
+     "features": [{"name":"Sneak Attack","desc":"1d6 when Adv or ally adjacent"}],
+     "inventory": ["Shortsword","Leather armor","Thieves' tools","15 gp"]
+   }
+   ```
+   Omit `spells` for non-casters. `features`, `inventory` are plain string arrays. The display shows "Full sheet not loaded" when all four are absent.
 5. Deliver one in-character paragraph recapping current situation — where the party is, what's at stake, what was last happening.
 6. Enter active DM mode — no `/dnd` prefix needed from this point.
 
