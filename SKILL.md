@@ -122,9 +122,10 @@ At the start of each turn, run `check_input.py` before processing the player's m
 
 **Autorun / taxi mode** (`autorun: true` in `state.md → ## Session Flags`):
 
-When autorun is active, Claude drives the turn loop — no DM Enter required and no PTY wrapper needed. After completing each response, run this blocking wait as the very last Bash call of the response. **Use the description `"Autorun wait — Ctrl+C to return to manual mode"`** so the DM sees how to interrupt it in the CLI tool display.
+When autorun is active, Claude drives the turn loop — no DM Enter required and no PTY wrapper needed. After completing each response, run this blocking wait as the very last Bash call of the response. The CLI shows the command text in the `⏺ Bash(...)` label — the comment on line 1 is what the DM sees while it blocks.
 
 ```bash
+# Autorun wait — Ctrl+C to return to manual mode
 AUTORUN=$(bash ~/.claude/skills/dnd/display/autorun-wait.sh)
 echo "$AUTORUN"
 ```
