@@ -13,7 +13,7 @@ Built for groups who want a real DM experience without needing one at the table.
 
 ## What This Is
 
-You run `/dnd load my-campaign` in Claude Code. Claude becomes your DM — rolling dice, voicing NPCs, tracking HP and XP, and running combat. The **cinematic display companion** puts narration on the big screen in real time with a typewriter effect and atmospheric backgrounds. Players sit on the couch, open the companion on their phones, type their actions, and hit **Ready** — Claude picks up every submission automatically and runs the next turn without the DM pressing Enter.
+You run `/dnd load my-campaign` in Claude Code. Claude becomes your DM — rolling dice, voicing NPCs, tracking HP and XP, and running combat. If you have a TV or tablet nearby, the **cinematic display companion** puts the narration on screen in real time — typewriter effect, atmospheric backgrounds that shift with the scene, a dynamic sky canvas, and a live party stat sidebar. Open it on any device on your network and everyone at the table can follow along. Players submit their actions from their phones; Claude picks them up automatically and runs the next turn.
 
 What separates this from a chatbot improvising a story is a set of [twelve applied behavioral standards](https://github.com/Bobby-Gray/claude-dnd-skill/blob/main/SKILL.md#what-makes-a-great-dm--applied-standards) enforced as hard constraints on every session. They cover the full range of what makes DM-ing genuinely difficult and the result is sessions that feel authored — where moments land, where the world has weight, and where your choices accumulate into a story that couldn't have happened to anyone else.
 
@@ -77,8 +77,7 @@ The Flask server receives narration text, player actions, dice results, and char
 
 - [Claude Code](https://claude.ai/code) CLI installed
 - Python 3.10+
-- `pip3 install flask flask-cors numpy` (display companion; numpy required for sound effects)
-- `pip3 install cryptography` (TLS cert generation — LAN mode only)
+- `pip3 install flask flask-cors numpy cryptography` (display companion; numpy required for sound effects, cryptography for LAN TLS)
 
 ---
 
@@ -89,7 +88,7 @@ The Flask server receives narration text, player actions, dice results, and char
 git clone https://github.com/Bobby-Gray/claude-dnd-skill ~/.claude/skills/dnd
 
 # 2. Install display companion dependencies (optional)
-pip3 install flask flask-cors cryptography
+pip3 install flask flask-cors numpy cryptography
 
 # 3. That's it — no other setup required
 ```
@@ -209,7 +208,7 @@ An optional local web server (`display/app.py`) that renders DM narration on any
 ### Setup
 
 ```bash
-pip3 install flask flask-cors cryptography
+pip3 install flask flask-cors numpy cryptography
 ```
 
 ### Starting the Display
@@ -225,6 +224,17 @@ bash ~/.claude/skills/dnd/display/start-display.sh --lan
 ```
 
 Then open `https://localhost:5001` in your browser. The first time you'll see a certificate warning for the self-signed cert — click through it. For LAN devices use the IP URL printed at startup (e.g. `https://192.168.1.x:5001`).
+
+### Viewing Options
+
+Open the display URL in a browser, then choose how to show it:
+
+| Option | How |
+|--------|-----|
+| **TV — Cast tab** | Chrome → three-dot menu → Cast → Cast tab; select your Chromecast or smart TV |
+| **TV — Screen mirror** | macOS: Control Centre → Screen Mirroring → Apple TV / AirPlay receiver |
+| **iPad / tablet** | Start with `--lan`, open `https://<your-ip>:5001` in Safari or Chrome; works in landscape |
+| **Second monitor** | Open `https://localhost:5001` in a browser window and drag it to the second display |
 
 ### TLS / HTTPS Setup
 
@@ -273,14 +283,31 @@ python3 ~/.claude/skills/dnd/display/push_stats.py --autorun-threshold 0  # rese
 
 There are two ways to surface hints and warnings on the display — an on-demand button and a per-session automatic mode.
 
-**DM Help button (◈)** — click the button on the companion display at any time to request a one-shot contextual hint. Within seconds a hint or warning appears on screen, generated from the current scene, open threads, and the character's options. It does not interrupt the session or consume a turn. Use it when you're unsure what to do, or want a heads-up before making a big decision.
+**DM Help button (◈)** — a **◈ DM Help** button sits in the bottom-right corner of the display at all times. Click it and within a few seconds a contextual hint or warning is generated from the current scene and pushed to the display — no CLI command needed, no per-turn token overhead. The button reads the last 8 display blocks and current campaign state, calls Claude in non-interactive mode, and sends the result as a hint block via the normal SSE pipeline. Shows "Thinking…" while in flight; resets automatically when the block arrives. Multiple simultaneous clicks only trigger one execution.
 
-**Tutor mode (per-session)** — enables automatic hint blocks after every scene introduction, decision point, roll outcome, and combat round. Hints appear on the display collapsed by default and never spoil undiscovered information. Ideal for players new to D&D 5e mechanics.
+Hint blocks are **collapsed by default** — click or tap the header to expand. Warnings use an amber border:
+
+- **DM Hint** (◈, collapsible) — skills worth attempting, visible options, what each path might cost
+- **Warning** (⚠, amber border) — flags irreversible choices before the player commits
+
+![Tutor mode intro hint](tutor-hint-intro.png)
+
+Hints can surface contextual NPC and situation knowledge the DM would naturally flag:
+
+![Tutor hint with NPC context](tutor-hint-npc.png)
+
+Warnings use an amber border to distinguish high-stakes choices:
+
+![Tutor warning block](tutor-warning.png)
+
+**Tutor mode (per-session)** — for new players who want continuous guidance, enable automatic hint blocks after every scene, decision point, and roll — no button needed. Adds ~10–20% token overhead per turn. Use the DM Help button instead for on-demand hints without the ongoing cost.
 
 ```
 /dnd tutor on    # enable for this session
 /dnd tutor off   # disable
 ```
+
+Tutor mode is session-scoped — does not persist to the next `/dnd load` unless set again.
 
 The two are independent — the ◈ button is always available regardless of whether tutor mode is on.
 
@@ -294,17 +321,62 @@ The server scans narration text for keywords and crossfades the background gradi
 |-------|-----------------|-----------|
 | Tavern | inn, hearth, ale, tallow, barkeep | embers |
 | Dungeon | corridor, torch, portcullis, dank | dust |
-| Ocean / Docks | dock, harbour, wave, tide, ship | bubbles |
-| Forest | tree, canopy, moss, thicket, grove | fireflies |
+| Ocean / Docks | dock, harbour, wave, tide, ship | ripples |
+| Forest | tree, canopy, moss, thicket, grove | leaves |
 | Crypt | tomb, undead, skeleton, burial | smoke |
 | Arcane | ritual, rune, sigil, incantation | sparks |
 | Mountain | glacier, frost, blizzard, ridge | snow |
-| Cave | stalactite, grotto, echo, drip | drips |
+| Cave | stalactite, grotto, echo, drip | mist |
 | Night | midnight, moon, constellation | stars |
 | City / Town | market, cobble, district, crowd | rain |
-| + 7 more | mine, castle, ruins, swamp, desert, fire, temple | — |
+| Swamp | swamp, bog, marsh, mire | mist |
+| + 6 more | mine, castle, ruins, desert, fire, temple | — |
 
 Scene transitions crossfade over ~2.5 seconds. The server maintains a 20-chunk rolling window for detection so scenes don't flicker on single keyword matches.
+
+### Dynamic Sky Canvas
+
+A canvas layer rendered above the scene background shows a live sky that reacts to `world_time` data pushed via `push_stats.py`:
+
+- **Time of day** — sun arcs from dawn (lower-left) through midday (top-center) to dusk (lower-right); switches to crescent moon + twinkling stars at night; twilight shows an orange horizon
+- **Weather** — calm: 2 light clouds; overcast: 5 heavy dark clouds, dimmed sun; rainy: dense cloud cover, muted palette; stormy: near-black sky; clear night: full star field
+- **Clouds** — 5 cloud objects each built from 8 overlapping circles; drift slowly and wrap
+
+Push world time data after loading a campaign and after any rest or time advance:
+
+```bash
+python3 ~/.claude/skills/dnd/display/push_stats.py --world-time \
+  '{"date":"7 Deepmonth 1312 CR","day_name":"Starday","time":"morning","season":"Deep Winter","weather":"overcast"}'
+```
+
+Valid `time` values: `dawn`, `morning`, `midday`, `afternoon`, `evening`, `dusk`, `night`
+Valid `weather` values: `calm`, `clear`, `overcast`, `rainy`, `stormy`
+
+### Sound Effects
+
+Narration text is scanned server-side for 12 SFX trigger categories. When a match is found, the browser fetches a synthesized WAV file and plays it via Web Audio API — no server audio output, works on any device with the tab open.
+
+```
+impact · sword · arrow · shout · thud · magic · coins · door · low_hum · fire · breath
+```
+
+SFX synthesis uses numpy — if numpy is not installed the feature degrades silently. Enable via the **Sound Effects** toggle in the top-right of the display.
+
+| Narration text | SFX |
+|----------------|-----|
+| "...strikes the shield..." | impact |
+| "...draws her blade..." | sword |
+| "...looses an arrow..." | arrow |
+| "...he roars across the dock..." | shout |
+| "...collapses to the floor..." | thud |
+| "...arcane energy crackles..." | magic |
+| "...coins spill across the table..." | coins |
+| "...the door creaks open..." | door |
+| "...the altar hums with energy..." | low_hum |
+| "...the torch flares..." | fire |
+| "...a sharp exhale..." | breath |
+
+The browser caches each WAV after first fetch. SFX trigger naturally alongside the typewriter animation since both are driven by the same narration chunks.
 
 ### Live Character Sidebar
 
@@ -319,7 +391,12 @@ python3 ~/.claude/skills/dnd/display/push_stats.py --replace-players --json '{
     "name": "Aldric", "race": "Human", "class": "Fighter", "level": 2,
     "hp": {"current": 14, "max": 18}, "xp": {"current": 220, "next": 300},
     "ac": 17, "initiative": "+1", "speed": 30,
-    "hit_dice": {"remaining": 2, "max": 2, "die": "d10"}
+    "hit_dice": {"remaining": 2, "max": 2, "die": "d10"},
+    "ability_scores": {
+      "str": {"score": 16, "mod": "+3"}, "dex": {"score": 12, "mod": "+1"},
+      "con": {"score": 15, "mod": "+2"}, "int": {"score": 10, "mod": "+0"},
+      "wis": {"score": 11, "mod": "+0"}, "cha": {"score": 13, "mod": "+1"}
+    }
   }]
 }'
 
@@ -338,11 +415,19 @@ python3 ~/.claude/skills/dnd/display/push_stats.py --turn-current "Skeleton"
 
 # Combat ended
 python3 ~/.claude/skills/dnd/display/push_stats.py --turn-clear
+
+# World time clock
+python3 ~/.claude/skills/dnd/display/push_stats.py --world-time \
+  '{"date":"7 Deepmonth 1312 CR","day_name":"Starday","time":"morning","season":"Deep Winter","weather":"overcast"}'
 ```
+
+![Character sidebar card](sidebar-card.png)
 
 ### Clickable Character Sheet
 
 Click or tap any character card in the sidebar to open a full character sheet modal — attacks, features, and inventory at a glance. Works on desktop and on phones/tablets connected via LAN.
+
+![Character sheet modal](character-sheet-modal.png)
 
 Include the `sheet` field when pushing stats on `/dnd load` to populate the full sheet:
 
@@ -417,9 +502,14 @@ python3 scripts/combat.py init '[
   {"name":"Skeleton","dex_mod":2,"hp":13,"ac":13,"type":"npc"}
 ]'
 
+# Reprint tracker from saved state
+python3 scripts/combat.py tracker '<state_json>' <round_num>
+
 # Resolve a single attack
 python3 scripts/combat.py attack --atk 5 --ac 13 --dmg 1d8+3
 ```
+
+`init` outputs a `STATE_JSON:` line — save this to `state.md` under `## Active Combat` for persistence between turns.
 
 ### `character.py` — Stat derivation and levelling
 
@@ -451,10 +541,13 @@ python3 scripts/character.py xp --level 2 --gained 150
 │   ├── ability-scores.py
 │   ├── combat.py
 │   ├── character.py
+│   ├── tracker.py
 │   ├── calendar.py
+│   ├── data_pull.py
 │   └── lookup.py
 ├── display/
 │   ├── app.py                # Flask SSE server
+│   ├── audio.py              # SFX synthesis and browser trigger (numpy)
 │   ├── autorun-wait.sh       # Blocking wait script for autorun mode
 │   ├── send.py               # Direct send for narration/dice/player actions
 │   ├── push_stats.py         # Character and combat stat updates
