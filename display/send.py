@@ -39,11 +39,17 @@ import sys
 import json
 import argparse
 import os
+import ssl
 import urllib.request
 
-FLASK_URL  = "http://localhost:5001/chunk"
+FLASK_URL  = "https://localhost:5001/chunk"
 TOKEN_FILE = os.path.expanduser("~/.claude/skills/dnd/display/.token")
 TIMEOUT    = 2.0
+
+# Self-signed cert — skip verification for localhost connections
+_SSL_CTX = ssl.create_default_context()
+_SSL_CTX.check_hostname = False
+_SSL_CTX.verify_mode = ssl.CERT_NONE
 
 
 def _read_token() -> str:
@@ -105,7 +111,7 @@ def main() -> None:
         method="POST",
     )
     try:
-        urllib.request.urlopen(req, timeout=TIMEOUT)
+        urllib.request.urlopen(req, timeout=TIMEOUT, context=_SSL_CTX)
     except Exception:
         pass  # Display not running — fail silently
 

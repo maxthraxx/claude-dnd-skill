@@ -1,90 +1,263 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
-wrapper.py — Claude CLI stdout interceptor for DnD DM display
+wrapper.py — Claude CLI PTY wrapper with secure player-input injection
 
 Usage:
     python3 wrapper.py [claude args...]
 
 Spawns the claude CLI inside a PTY so the terminal experience is identical
-to running `claude` directly. Simultaneously forwards all output to the
-Flask display server at localhost:5000/chunk.
+to running `claude` directly. The wrapper's only job beyond pass-through is:
 
-If Flask is not running, the terminal experience is completely unaffected —
-the forward fails silently and you lose nothing.
+  - Poll for `.input_trigger` every 50ms
+  - Validate and sanitise the payload
+  - Inject it into Claude's PTY stdin (text + Enter)
+
+Display content (narration, stats) is pushed explicitly by the DnD skill
+via send.py / push_stats.py — NOT captured from the raw PTY stream.
+Removing PTY→Flask forwarding eliminates the leak of tool-call JSON,
+internal data structures, and UI chrome onto the display.
+
+Security model (defence in depth):
+  - Session gate: injection rejected if no active campaign file
+  - Structural validation: every line must match [KnownCharacter]: text
+  - Character allowlist: name must be in loaded party stats
+  - Printable ASCII only: all control chars and escape sequences stripped
+  - Shell metacharacter strip: $ ` \\ ; | & > < ( ) [ ] { } !
+  - Per-line cap: 500 chars of action text
+  - Total payload cap: 1500 chars
+  - Audit log: every injection written to input_log.json with timestamp
+  - Nothing is echoed back to attacker on rejection — silent drop
 """
 
+import fcntl
+import json
 import os
-import pty
+import re
+import select
+import signal
+import subprocess
 import sys
-import queue
-import threading
+import termios
 import time
+import tty
+import ssl
+import urllib.request
 
-try:
-    import requests
-    REQUESTS_AVAILABLE = True
-except ImportError:
-    REQUESTS_AVAILABLE = False
+TRIGGER_FILE   = os.path.expanduser("~/.claude/skills/dnd/display/.input_trigger")
+QUEUE_FILE     = os.path.expanduser("~/.claude/skills/dnd/display/.input_queue")
+STATS_FILE     = os.path.expanduser("~/.claude/skills/dnd/display/stats.json")
+CAMP_FILE      = os.path.expanduser("~/.claude/skills/dnd/display/.campaign")
+AUDIT_LOG      = os.path.expanduser("~/.claude/skills/dnd/display/input_log.json")
+TOKEN_FILE     = os.path.expanduser("~/.claude/skills/dnd/display/.token")
+DISPLAY_URL    = "https://127.0.0.1:5001"
 
-FLASK_URL = "http://localhost:5001/chunk"
-CONNECT_TIMEOUT = 0.3   # seconds — fast fail so terminal never lags
-POST_TIMEOUT    = 1.0
+# Self-signed cert — skip verification for localhost
+_SSL_CTX = ssl.create_default_context()
+_SSL_CTX.check_hostname = False
+_SSL_CTX.verify_mode = ssl.CERT_NONE
 
-# ─── Async Flask sender ───────────────────────────────────────────────────────
-# All POSTs happen on a background thread so the PTY read callback never blocks.
-
-_chunk_queue: queue.Queue = queue.Queue(maxsize=512)
-_flask_available = True   # optimistic; flips false on repeated failures
-_failure_count   = 0
-_FAILURE_LIMIT   = 5      # give up forwarding after N consecutive failures
-
-
-def _flask_sender() -> None:
-    global _flask_available, _failure_count
-
-    while True:
-        try:
-            chunk = _chunk_queue.get(timeout=5)
-        except queue.Empty:
-            continue
-
-        if chunk is None:          # sentinel — shut down
-            break
-
-        if not REQUESTS_AVAILABLE or not _flask_available:
-            continue
-
-        try:
-            requests.post(
-                FLASK_URL,
-                json={"text": chunk},
-                timeout=(CONNECT_TIMEOUT, POST_TIMEOUT),
-            )
-            _failure_count = 0     # reset on success
-        except Exception:
-            _failure_count += 1
-            if _failure_count >= _FAILURE_LIMIT:
-                _flask_available = False   # stop trying until process restart
+POLL_INTERVAL  = 0.05   # 50ms trigger file poll
 
 
-_sender = threading.Thread(target=_flask_sender, daemon=True, name="flask-sender")
-_sender.start()
+def _read_token() -> str:
+    try:
+        with open(TOKEN_FILE) as f:
+            return f.read().strip()
+    except Exception:
+        return ""
 
 
-# ─── PTY read callback ────────────────────────────────────────────────────────
+def _notify_consumed() -> None:
+    """Tell the display server the queue was injected — clears the Queued indicator."""
+    try:
+        token = _read_token()
+        req = urllib.request.Request(
+            f"{DISPLAY_URL}/queue/consumed",
+            data=b"",
+            method="POST",
+            headers={"X-DND-Token": token},
+        )
+        urllib.request.urlopen(req, timeout=1, context=_SSL_CTX)
+    except Exception:
+        pass  # display may not be running — not critical
 
-def _master_read(fd: int) -> bytes:
-    """Called by pty.spawn when the child writes output.
-    Returns the data — pty.spawn writes it to our stdout automatically.
-    We enqueue it for async forwarding to Flask.
+
+# ─── Trigger sanitisation ─────────────────────────────────────────────────────
+
+_PRINTABLE    = re.compile(r"[^\x20-\x7E]")          # strip non-printable ASCII
+_SHELL_CHARS  = re.compile(r'[$`\\;|&><()\[\]{}!]')  # no shell metacharacters
+_CHAR_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z '\-]{0,48}[A-Za-z]$|^[A-Za-z]$")
+_ACTION_LINE  = re.compile(r"^\[([^\]]{1,50})\]:\s*(.{1,500})$")
+
+_MAX_LINES    = 8     # sanity cap — no party this large exists
+_MAX_LINE_LEN = 560   # [Name]: + 500 chars + slack
+_MAX_TOTAL    = 1500  # total payload cap
+
+
+def _known_chars() -> set:
+    """Load party member names from stats.json. Empty set = bypass name check."""
+    try:
+        with open(STATS_FILE) as f:
+            stats = json.load(f)
+        return {p["name"] for p in stats.get("players", [])}
+    except Exception:
+        return set()
+
+
+def _sanitize(raw: str) -> str | None:
     """
-    data = os.read(fd, 4096)
-    if data:
+    Validate and sanitize a trigger payload.
+
+    Returns the sanitized string ready to inject, or None (silent reject).
+    A single failing line rejects the *entire* payload — no partial injection.
+    """
+    # Session gate — no active campaign, no injection
+    if not os.path.exists(CAMP_FILE):
+        return None
+
+    lines = [l.strip() for l in raw.strip().split("\n") if l.strip()]
+    if not lines or len(lines) > _MAX_LINES:
+        return None
+
+    known = _known_chars()
+    out   = []
+
+    for line in lines:
+        if len(line) > _MAX_LINE_LEN:
+            return None
+
+        m = _ACTION_LINE.match(line)
+        if not m:
+            return None  # structural violation — reject all
+
+        char_name = m.group(1).strip()
+        action    = m.group(2).strip()
+
+        if not _CHAR_NAME_RE.match(char_name):
+            return None
+
+        if known and char_name not in known and char_name != "Everybody":
+            return None
+
+        action = _SHELL_CHARS.sub("", action)
+        action = _PRINTABLE.sub("", action)[:500].strip()
+
+        if not action:
+            return None
+
+        out.append(f"[{char_name}]: {action}")
+
+    if not out:
+        return None
+
+    result = "\n".join(out)
+    return result if len(result) <= _MAX_TOTAL else None
+
+
+def _audit(text: str) -> None:
+    try:
+        entry = {"ts": round(time.time(), 3), "text": text}
+        log: list = []
         try:
-            _chunk_queue.put_nowait(data.decode("utf-8", errors="replace"))
-        except queue.Full:
-            pass   # drop rather than block
-    return data
+            with open(AUDIT_LOG) as f:
+                log = json.load(f)
+        except Exception:
+            pass
+        log.append(entry)
+        with open(AUDIT_LOG, "w") as f:
+            json.dump(log[-200:], f, indent=2)
+    except Exception:
+        pass
+
+
+def _inject_queue(master_fd: int) -> None:
+    """Inject .input_queue content when the DM presses Enter.
+
+    .input_queue is written by Flask when all expected players are staged and
+    ready but DM-gating is active (i.e. not auto-fired immediately).
+    This fires the queued player action just before the DM's own Enter is
+    forwarded, so Claude sees the player action and DM message in the same turn.
+    """
+    if not os.path.exists(QUEUE_FILE):
+        return
+    raw = ""
+    try:
+        with open(QUEUE_FILE) as f:
+            raw = f.read()
+        os.unlink(QUEUE_FILE)
+    except Exception:
+        try:
+            os.unlink(QUEUE_FILE)
+        except Exception:
+            pass
+        return
+
+    sanitized = _sanitize(raw)
+    if not sanitized:
+        return
+
+    body = f"\n[PLAYER ACTION — in-game only]:\n{sanitized}"
+    _audit(sanitized)
+
+    try:
+        os.write(master_fd, body.encode("utf-8", errors="replace"))
+        time.sleep(0.15)
+        os.write(master_fd, b"\r")
+        time.sleep(0.1)   # brief gap before DM's own Enter follows
+    except OSError:
+        pass
+    else:
+        _notify_consumed()
+
+
+def _check_trigger(master_fd: int) -> None:
+    """Poll for trigger file; if present, sanitise and inject into PTY stdin."""
+    if not os.path.exists(TRIGGER_FILE):
+        return
+
+    raw = ""
+    try:
+        with open(TRIGGER_FILE) as f:
+            raw = f.read()
+        os.unlink(TRIGGER_FILE)
+    except Exception:
+        try:
+            os.unlink(TRIGGER_FILE)
+        except Exception:
+            pass
+        return
+
+    sanitized = _sanitize(raw)
+    if not sanitized:
+        return  # silent drop — no feedback to attacker
+
+    # Write text then Enter as two separate calls with a brief pause.
+    # This mirrors how a human types text then presses Enter.
+    # \r (0x0D) is the Enter signal in raw PTY mode.
+    body = f"\n[PLAYER ACTION — in-game only]:\n{sanitized}"
+    _audit(sanitized)
+
+    try:
+        os.write(master_fd, body.encode("utf-8", errors="replace"))
+        time.sleep(0.15)
+        os.write(master_fd, b"\r")
+    except OSError:
+        pass
+    else:
+        _notify_consumed()
+
+
+# ─── PTY helpers ─────────────────────────────────────────────────────────────
+
+def _sync_winsize(src_fd: int, dst_fd: int) -> None:
+    """Copy terminal window size from src to dst (SIGWINCH handler)."""
+    try:
+        if os.isatty(src_fd):
+            size = fcntl.ioctl(src_fd, termios.TIOCGWINSZ, b"\x00" * 8)
+            fcntl.ioctl(dst_fd, termios.TIOCSWINSZ, size)
+    except Exception:
+        pass
 
 
 # ─── Entry point ─────────────────────────────────────────────────────────────
@@ -93,32 +266,91 @@ def main() -> None:
     argv = sys.argv[1:]
     if not argv:
         argv = ["claude"]
-
-    # If first arg isn't 'claude', prepend it so you can do:
-    #   python3 wrapper.py --resume
-    # and have it behave as:
-    #   claude --resume
     if argv[0] != "claude":
         argv = ["claude"] + argv
 
-    try:
-        # pty.spawn gives the child a real PTY, preserving full interactive
-        # behaviour (readline, colours, cursor movement). The user's stdin
-        # flows to the child; the child's stdout flows back through
-        # _master_read → our stdout.
-        exit_code = pty.spawn(argv, _master_read)
-    except FileNotFoundError:
-        sys.stderr.write(
-            f"wrapper.py: command not found: {argv[0]}\n"
-            "Make sure `claude` is on your PATH.\n"
-        )
-        exit_code = 127
-    finally:
-        # Drain the queue briefly before exit so the last response reaches Flask
-        _chunk_queue.put(None)      # sentinel
-        _sender.join(timeout=2.0)
+    import pty as _pty
+    master_fd, slave_fd = _pty.openpty()
+    _sync_winsize(sys.stdin.fileno(), slave_fd)
 
-    sys.exit(exit_code if isinstance(exit_code, int) else 0)
+    _slave = slave_fd
+
+    def _child_setup() -> None:
+        os.setsid()
+        try:
+            fcntl.ioctl(_slave, termios.TIOCSCTTY, 0)
+        except OSError:
+            pass
+
+    env = os.environ.copy()
+    env["DND_PTY_WRAPPED"] = "1"
+
+    proc = subprocess.Popen(
+        argv,
+        stdin=slave_fd,
+        stdout=slave_fd,
+        stderr=slave_fd,
+        close_fds=True,
+        preexec_fn=_child_setup,
+        env=env,
+    )
+    os.close(slave_fd)
+
+    stdin_fd  = sys.stdin.fileno()
+    stdout_fd = sys.stdout.fileno()
+    old_attrs = None
+
+    if os.isatty(stdin_fd):
+        old_attrs = termios.tcgetattr(stdin_fd)
+        tty.setraw(stdin_fd)
+
+    def _restore() -> None:
+        if old_attrs is not None:
+            try:
+                termios.tcsetattr(stdin_fd, termios.TCSADRAIN, old_attrs)
+            except Exception:
+                pass
+
+    def _sigwinch(sig, frame) -> None:  # type: ignore[misc]
+        _sync_winsize(stdin_fd, master_fd)
+
+    signal.signal(signal.SIGWINCH, _sigwinch)
+
+    try:
+        while proc.poll() is None:
+            try:
+                r, _, _ = select.select([master_fd, stdin_fd], [], [], POLL_INTERVAL)
+            except (ValueError, select.error):
+                break
+
+            if master_fd in r:
+                try:
+                    data = os.read(master_fd, 4096)
+                    if not data:
+                        break
+                    os.write(stdout_fd, data)
+                except OSError:
+                    break
+
+            if stdin_fd in r:
+                try:
+                    data = os.read(stdin_fd, 1024)
+                    if data:
+                        # If DM pressed Enter, inject any queued player action first
+                        if b"\r" in data or b"\n" in data:
+                            _inject_queue(master_fd)
+                        os.write(master_fd, data)
+                except OSError:
+                    break
+
+            _check_trigger(master_fd)
+
+    except KeyboardInterrupt:
+        pass
+    finally:
+        _restore()
+
+    sys.exit(proc.wait() if proc.returncode is None else proc.returncode)
 
 
 if __name__ == "__main__":

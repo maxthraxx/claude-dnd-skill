@@ -21,13 +21,19 @@ if [[ "$1" == "--lan" ]]; then
           || hostname -I 2>/dev/null | awk '{print $1}')
 fi
 
-LOCAL_URL="http://localhost:5001"
+# Detect TLS (cert present → https, else http)
+if [[ -f "$DISPLAY_DIR/cert.pem" && -f "$DISPLAY_DIR/key.pem" ]]; then
+    SCHEME="https"
+else
+    SCHEME="http"
+fi
+LOCAL_URL="${SCHEME}://localhost:5001"
 
-# Check if already running
-if curl -s "$LOCAL_URL/ping" > /dev/null 2>&1; then
+# Check if already running (skip TLS verification for self-signed cert)
+if curl -sk "$LOCAL_URL/ping" > /dev/null 2>&1; then
     echo "Display already running at $LOCAL_URL"
     if [[ -n "$LAN_IP" ]]; then
-        echo "LAN access: http://$LAN_IP:5001"
+        echo "LAN access: ${SCHEME}://$LAN_IP:5001"
     fi
     open "$LOCAL_URL" 2>/dev/null || true
     exit 0
@@ -40,10 +46,10 @@ echo $! > "$PID_FILE"
 # Wait up to 5 seconds for the server to become ready
 for i in $(seq 1 10); do
     sleep 0.5
-    if curl -s "$LOCAL_URL/ping" > /dev/null 2>&1; then
+    if curl -sk "$LOCAL_URL/ping" > /dev/null 2>&1; then
         echo "Display started — $LOCAL_URL"
         if [[ -n "$LAN_IP" ]]; then
-            echo "LAN access:     http://$LAN_IP:5001"
+            echo "LAN access:     ${SCHEME}://$LAN_IP:5001"
             echo "Open the LAN URL on your TV/phone/tablet browser, then cast from there."
         fi
         open "$LOCAL_URL" 2>/dev/null || true
