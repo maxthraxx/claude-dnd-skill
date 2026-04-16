@@ -122,7 +122,7 @@ Dataset is bundled at `~/.claude/skills/dnd/data/dnd5e_srd.json` (1453 records: 
 ## `/dnd display [start|stop|status]`
 - `start` → ask LAN mode [y/n]; run `bash ~/.claude/skills/dnd/display/start-display.sh [--lan]`; print URL(s)
 - `stop` → `kill $(cat ~/.claude/skills/dnd/display/app.pid) 2>/dev/null && rm -f ~/.claude/skills/dnd/display/app.pid`
-- `status` → `curl -s http://localhost:5001/ping` — reachable or unreachable
+- `status` → `curl -sk https://localhost:5001/ping` — reachable or unreachable
 - No argument → print quick-start instructions
 
 ---

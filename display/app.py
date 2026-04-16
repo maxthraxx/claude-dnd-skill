@@ -1227,7 +1227,7 @@ def help_request():
 def player_input():
     """Queue a player action submitted from the display companion.
 
-    Body: {"character": "Kat", "text": "I draw my rapier", "hold": false}
+    Body: {"character": "Mira", "text": "I draw my rapier", "hold": false}
     Broadcasts pending_input event to all connected browsers.
     """
     if not _token_ok():
@@ -1290,7 +1290,7 @@ def device_deny():
 def stage_input():
     """Stage a player action for review. Broadcasts staged_inputs to all displays.
 
-    Body: {"character": "Kat", "text": "draws her rapier"}
+    Body: {"character": "Mira", "text": "draws her rapier"}
     """
     if not _token_ok():
         return "Forbidden", 403
@@ -1332,7 +1332,7 @@ def stage_input():
 def ready_input():
     """Toggle the ready flag for a staged character.
 
-    Body: {"character": "Kat", "ready": true}
+    Body: {"character": "Mira", "ready": true}
     Triggers auto-fire when all expected players are ready.
     """
     if not _token_ok():
@@ -1369,7 +1369,7 @@ def ready_input():
 def unstage_input():
     """Remove a character's staged action (e.g. player wants to edit it).
 
-    Body: {"character": "Kat"}
+    Body: {"character": "Mira"}
     """
     if not _token_ok():
         return "Forbidden", 403
@@ -1394,7 +1394,7 @@ def skip_input():
     """Skip a character's turn — stages a 'skips their turn' entry marked ready.
 
     Counts toward the auto-trigger threshold and fires auto-trigger if threshold met.
-    Body: {"character": "Kat"}
+    Body: {"character": "Mira"}
     """
     if not _token_ok():
         return "Forbidden", 403

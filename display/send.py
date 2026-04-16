@@ -35,7 +35,7 @@ Usage:
     echo "Short message" | python3 send.py
 
     # State changes bundled with narration (Option B)
-    python3 send.py --stat-hp "Kat:12:17" --stat-slot-use "Ben:1" << 'DNDEND'
+    python3 send.py --stat-hp "Mira:12:17" --stat-slot-use "Aldric:1" << 'DNDEND'
     The goblin's blade finds a gap in her armor for 5 damage...
     DNDEND
 

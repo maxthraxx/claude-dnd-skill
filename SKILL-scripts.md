@@ -194,6 +194,8 @@ If `check_input.py` returns output, prepend it to the player's terminal input wh
 - Condition gained → `--player NAME --conditions-add "Name"`; removed → `--conditions-remove "Name"`
 - Concentration started → `--player NAME --concentrate "Spell"`; ended → `--concentrate ""`
 - Item picked up → `--player NAME --inventory-add "Item"`; dropped/used → `--inventory-remove "Item"`
+- Timed effect starts → `--effect-start "NAME:SPELL:DURATION[:conc]"` bundled with narration send
+- Timed effect ends → `--effect-end "NAME:SPELL"` bundled with narration send
 - Faction standing changes → `--factions '[...]'` (full replace)
 - Combat start → `--turn-order`; each turn → `--turn-current`; end → `--turn-clear`
 - Level up → push updated full stats
@@ -210,11 +212,11 @@ CAMP=my-campaign
 
 # Timed effects — duration: 10r (rounds), 60m (minutes), 8h (hours), indef
 # Append 'conc' to mark as concentration (auto-sets concentration field)
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Ben" "Web" 10r conc
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Kat" "Disguise Self" 1h
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Kat" "Hunter's Mark" indef
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect end   "Ben" "Web"   # narrative end (broken/dispelled)
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect tick  "Ben"         # call on actor's turn — decrements rounds, prints expiry
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Aldric" "Web" 10r conc
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Mira" "Disguise Self" 1h
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Mira" "Hunter's Mark" indef
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect end   "Aldric" "Web"   # narrative end (broken/dispelled)
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect tick  "Aldric"         # call on actor's turn — decrements rounds, prints expiry
 
 # Conditions
 python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP condition add "Mira" poisoned
@@ -332,23 +334,28 @@ pip3 install -r requirements.txt
 ```
 
 ```
-Terminal (wrapper.py spawns claude)
-    ↓ stdout captured via PTY
-Flask on localhost:5001 (app.py)
+Terminal (run claude directly — no wrapper needed)
+    ↓ send.py calls per narration block / dice roll / stat change
+Flask on https://localhost:5001 (app.py — HTTPS, self-signed cert)
     ↓ Server-Sent Events
 Browser tab → Chromecast → TV
 ```
 
-**Option A — wrapper.py (full auto):**
+**Start the display:**
 ```bash
-python3 ~/.claude/skills/dnd/display/app.py          # Terminal 1
-open http://localhost:5001                            # Browser — Chromecast before session
-python3 ~/.claude/skills/dnd/display/wrapper.py      # Terminal 2
-python3 ~/.claude/skills/dnd/display/wrapper.py --resume
+bash ~/.claude/skills/dnd/display/start-display.sh          # localhost
+bash ~/.claude/skills/dnd/display/start-display.sh --lan    # LAN mode (phones, tablets)
+open https://localhost:5001                                  # open browser before /dnd load
 ```
 
-**Option B — direct send (from inside existing session):**
-Flask starts automatically on `/dnd load`. DM sends each block via `send.py` (see Active DM Mode in SKILL.md).
+`start-display.sh` always force-kills any previous instance before starting — no manual pre-kill needed.
+
+**Load a campaign:**
+```
+/dnd load <campaign-name>   # skill auto-detects running display, pushes party stats
+```
+
+The DM skill sends each narration block, dice result, and stat update via `send.py` calls (see Active DM Mode in SKILL.md for full send sequence and stat flag reference).
 
 Open the browser tab and Chromecast it *before* running `/dnd load` so the browser is connected when the opening narration streams in. The display buffers the last 60 chunks and replays them to reconnecting browsers.
 
