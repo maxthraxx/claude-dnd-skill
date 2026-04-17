@@ -252,6 +252,68 @@ Step (g) uses `push_stats.py --turn-current` directly because it has no narratio
 
 ---
 
+## XP Awards
+
+**Never calculate XP in context.** Use `scripts/xp.py` — it holds all tables and handles character file updates and display pushes. The DM's only decision is the difficulty tier and encounter type.
+
+### When to award XP
+
+**Combat encounters** — award after every resolved combat that presented genuine challenge. Use `--type combat`.
+
+**Non-combat encounters** — award when all of the following are true:
+- The outcome was *uncertain* (failure was possible and would have mattered)
+- The party exercised meaningful agency (skill, roleplay, preparation, clever thinking)
+- The event advanced the story in a consequential way
+
+Qualifying non-combat categories and their typical difficulty:
+| Encounter | Typical tier |
+|-----------|-------------|
+| Major social challenge (interrogation, high-stakes deception, negotiation) | Medium–Hard |
+| Investigation/mystery resolution (piecing together a complex plot, identifying a hidden threat) | Easy–Medium |
+| Ritual or arcane task completion (Speak with Dead, dangerous ritual, significant spell use with uncertain outcome) | Easy–Medium |
+| Milestone discovery (unmasking an enemy, confirming a threat, obtaining key evidence) | Easy–Medium |
+| Harrowing escape, stealth infiltration, or survival challenge with meaningful failure risk | Medium–Hard |
+
+Do NOT award XP for: routine travel, trivial conversations, automatic skill checks, rest, shopping, or anything the party could not plausibly have failed.
+
+### Difficulty rating guide
+
+Both tables use the same scale. Rate the encounter *as it was experienced*, not as designed.
+
+| Tier | Feel |
+|------|------|
+| **Easy** | Manageable challenge; resources barely taxed; outcome rarely in doubt |
+| **Medium** | Moderate pressure; one or two resources spent; outcome uncertain |
+| **Hard** | Significant pressure; multiple resources spent; failure was genuinely possible |
+| **Deadly** | Survival threatened; meaningful chance of PC death or catastrophic failure |
+
+### Script call pattern
+
+```bash
+CAMP=<campaign-name>
+
+# After combat (exact CR calculation — preferred):
+python3 ~/.claude/skills/dnd/scripts/xp.py award \
+  --campaign $CAMP --characters "Kat,Ben" \
+  --monsters "goblin:1/4:3,hobgoblin:1:1" --note "description"
+
+# After combat (difficulty-rated — use when monster CRs are unavailable):
+python3 ~/.claude/skills/dnd/scripts/xp.py award \
+  --campaign $CAMP --characters "Kat,Ben" --difficulty hard --type combat
+
+# After qualifying non-combat encounter:
+python3 ~/.claude/skills/dnd/scripts/xp.py award \
+  --campaign $CAMP --characters "Kat,Ben" --difficulty medium --type noncombat \
+  --note "brief description"
+
+# Preview before awarding:
+python3 ~/.claude/skills/dnd/scripts/xp.py calc --level 3 --players 2 --difficulty hard
+```
+
+Award XP at the **end of the scene** when the outcome is clear — not mid-combat or mid-negotiation. If a session ends before XP is awarded, note it in the session log and award at the start of the next session before anything else.
+
+---
+
 ## Tutor Mode
 
 Enabled via `/dnd tutor on`. Stored as `tutor_mode: true` in `state.md → ## Session Flags`. Check this flag on every `/dnd load`. Session-scoped — does not persist unless explicitly set again.

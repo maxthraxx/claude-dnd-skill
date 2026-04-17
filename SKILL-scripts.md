@@ -28,6 +28,39 @@ Roll mode: generates 3 arrays (4d6kh3 × 6 each). Point buy mode: prints cost ta
 
 ---
 
+## XP Script — `scripts/xp.py`
+Awards XP for combat and qualifying non-combat encounters. Reads character files from the campaign directory, updates XP, and pushes to the display sidebar. All tables (difficulty thresholds, CR→XP, monster multipliers, level advancement) are codified in the script — the DM only decides the difficulty tier or provides a monster list.
+
+```bash
+# Preview — no files modified:
+python3 ~/.claude/skills/dnd/scripts/xp.py calc --level 3 --players 2 --difficulty hard --type combat
+python3 ~/.claude/skills/dnd/scripts/xp.py calc --level 3 --players 2 --monsters "goblin:1/4:3,hobgoblin:1:1"
+
+# Award after a combat encounter — difficulty-rated (use when full monster list is unavailable):
+python3 ~/.claude/skills/dnd/scripts/xp.py award \
+  --campaign <name> --characters "Kat,Ben" --difficulty hard --type combat
+
+# Award after a combat encounter — exact CR calculation (preferred for standard combats):
+python3 ~/.claude/skills/dnd/scripts/xp.py award \
+  --campaign <name> --characters "Kat,Ben" \
+  --monsters "goblin:1/4:3,hobgoblin:1:1" --note "Ambush in the alley"
+
+# Award for a qualifying non-combat encounter:
+python3 ~/.claude/skills/dnd/scripts/xp.py award \
+  --campaign <name> --characters "Kat,Ben" --difficulty medium --type noncombat \
+  --note "Theodra interrogation"
+```
+
+**Difficulty tiers:** `easy` `medium` `hard` `deadly`
+**Encounter types:** `combat` `noncombat` (both use the same difficulty threshold table)
+**Monster CR formats:** `1/4`, `0.25`, `1/2`, `0.5`, `1/8`, `0.125`, or integer (`1`, `5`, `10`)
+**Monster count:** omit for 1 (e.g. `"dragon:10"`); explicit for groups (e.g. `"goblin:1/4:3"`)
+**Monster multiplier** (applied automatically): ×1 (1), ×1.5 (2), ×2 (3–6), ×2.5 (7–10), ×3 (11–14), ×4 (15+)
+
+`award` updates the character file XP field, flags LEVEL UP PENDING if a threshold is crossed, and pushes XP to the display via `push_stats.py`. The `--note` label prints to terminal only — not stored.
+
+---
+
 ## Combat Script — `scripts/combat.py`
 ```bash
 # Roll initiative and print tracker
@@ -275,7 +308,7 @@ python3 ~/.claude/skills/dnd/scripts/calendar.py -c $CAMP events
 Keyword search across campaign files. Use this **before** loading full files into context when looking up a specific past event, NPC detail, or plot thread.
 
 ```bash
-CAMP=mom-dad-campaign-0
+CAMP=my-campaign
 
 # Search all default files (state, log, archive, world, npcs):
 python3 ~/.claude/skills/dnd/scripts/campaign_search.py -c $CAMP Lasswater
@@ -336,17 +369,16 @@ pip3 install -r requirements.txt
 ```
 Terminal (run claude directly — no wrapper needed)
     ↓ send.py calls per narration block / dice roll / stat change
-Flask on http://localhost:5001 (app.py — HTTP by default)
+Flask on https://localhost:5001 (app.py — HTTPS, self-signed cert)
     ↓ Server-Sent Events
 Browser tab → Chromecast → TV
 ```
 
 **Start the display:**
 ```bash
-bash ~/.claude/skills/dnd/display/start-display.sh               # localhost, HTTP (default)
-bash ~/.claude/skills/dnd/display/start-display.sh --lan         # LAN mode, HTTP
-bash ~/.claude/skills/dnd/display/start-display.sh --lan --tls  # LAN mode, HTTPS
-open http://localhost:5001                                        # open browser before /dnd load
+bash ~/.claude/skills/dnd/display/start-display.sh          # localhost
+bash ~/.claude/skills/dnd/display/start-display.sh --lan    # LAN mode (phones, tablets)
+open https://localhost:5001                                  # open browser before /dnd load
 ```
 
 `start-display.sh` always force-kills any previous instance before starting — no manual pre-kill needed.
