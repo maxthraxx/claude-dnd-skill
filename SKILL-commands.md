@@ -42,19 +42,60 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
 
 2. Read SKILL-scripts.md (for script syntax this session)
 3. Read state.md, world.md, npcs.md (index only — **do NOT read npcs-full.md or world-seeds.md at load**), and all characters/*.md
-4. Push full party stats to display sidebar with `--replace-players` (clears stale characters from previous campaigns). For each character, include `--sheet <JSON>` built from the character file (attacks, spells, features, inventory). Also push `--world-time` with date/time/season/weather from state.md. Also push `--factions` from active faction states in `state.md → ## World State` (use `[]` if no factions are active).
+4. Push full party stats to display sidebar. **CRITICAL:** use `--json` with a complete player object — **never** the `--player` shorthand here. `--player` only updates existing fields; it cannot populate the card or sheet tabs. The display shows "Full sheet not loaded" when `sheet` is absent.
 
-   Sheet JSON structure — see `## push_stats.py → --sheet` in SKILL-scripts.md for full example. Keys: `attacks`, `spells` (omit for non-casters), `features`, `inventory`. Display shows "Full sheet not loaded" when all four are absent.
+   ```bash
+   python3 ~/.claude/skills/dnd/display/push_stats.py --replace-players --json '{
+     "players": [
+       {
+         "name": "CharName",
+         "race": "Race",
+         "class": "Class (Background)",
+         "level": N,
+         "hp": {"current": N, "max": N, "temp": 0},
+         "ac": N,
+         "speed": 30,
+         "hit_dice": {"total": N, "remaining": N, "die": "d8"},
+         "xp": {"current": N, "next": N},
+         "conditions": [],
+         "concentration": null,
+         "inspiration": 0,
+         "spell_slots": {},
+         "sheet": {
+           "attacks": [{"name":"...","bonus":"+N","damage":"...","type":"...","notes":"..."}],
+           "features": ["Feature 1", "Feature 2"],
+           "inventory": ["Item 1", "Item 2"]
+         }
+       }
+     ]
+   }'
+   ```
 
-   Faction JSON structure (from `state.md → ## World State → Faction states`):
+   For casters, add `"spells": {"cantrips":["..."],"level1":["..."]}` inside `sheet`. Omit for non-casters.
+
+   `--replace-players` clears stale characters from previous campaigns. Build the JSON from the character file — every field above is required for the card and sheet tabs to render correctly.
+
+   Also push `--world-time` with date/time/season/weather from state.md. Also push `--factions` from active faction states in `state.md → ## World State` (use `[]` if no factions are active). Also push `--quests` from active quests in `state.md → ## Open Threads & Rumours` (use `[]` if no quests are active).
+
+   Faction JSON structure:
    ```json
    [{"name":"Pale Court","standing":"Allied"},{"name":"Watch","standing":"Neutral"}]
    ```
-   Faction `standing` values: `Allied`, `Friendly`, `Neutral`, `Suspicious`, `Hostile`. Use `[]` to clear all factions. Push with:
+   Faction `standing` values: `Allied`, `Friendly`, `Neutral`, `Suspicious`, `Hostile`. Use `[]` to clear all factions:
    ```bash
    python3 ~/.claude/skills/dnd/display/push_stats.py --factions '[...]'
    ```
-   The faction panel on the sidebar only appears when at least one faction is present — do not skip this push.
+   The faction panel only appears when at least one faction is present — do not skip this push.
+
+   Quest JSON structure:
+   ```json
+   [{"name":"The Suppressed Ward-Point","status":"resolved"},{"name":"Vedra Ceth","status":"threat"}]
+   ```
+   Quest `status` values: `active` (amber), `threat` (red), `resolved` (green), `failed` (muted). Use `[]` to clear all quests:
+   ```bash
+   python3 ~/.claude/skills/dnd/display/push_stats.py --quests '[...]'
+   ```
+   The quest panel only appears when at least one quest is present — do not skip this push.
 5. Deliver one in-character paragraph recapping current situation — where the party is, what's at stake, what was last happening.
 6. Enter active DM mode — no `/dnd` prefix needed from this point.
 

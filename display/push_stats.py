@@ -150,6 +150,8 @@ def main() -> None:
                         help='Full character sheet data: {"attacks":[...],"spells":{...},"features":[...],"inventory":[...]} (requires --player)')
     parser.add_argument("--factions", metavar="JSON",
                         help='Party faction standings: [{"name":"Pale Court","standing":"Suspicious"},...]; [] clears')
+    parser.add_argument("--quests", metavar="JSON",
+                        help='Quest tracker: [{"name":"The Ward-Points","status":"resolved"},{"name":"Vedra Ceth","status":"threat"},...]; [] clears. Status values: active, threat, resolved, failed')
     parser.add_argument("--turn-order", metavar="JSON",
                         help='Full turn order JSON: {"order":[...],"current":"Name","round":1}')
     parser.add_argument("--turn-current", metavar="NAME",
@@ -249,6 +251,14 @@ def main() -> None:
             payload["factions"] = json.loads(args.factions)
         except json.JSONDecodeError as e:
             print(f"Invalid factions JSON: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    # ── Quests ─────────────────────────────────────────────────────────────────
+    if args.quests is not None:
+        try:
+            payload["quests"] = json.loads(args.quests)
+        except json.JSONDecodeError as e:
+            print(f"Invalid quests JSON: {e}", file=sys.stderr)
             sys.exit(1)
 
     # ── Turn order ─────────────────────────────────────────────────────────────

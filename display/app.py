@@ -65,7 +65,7 @@ INPUT_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/player_input.js
 TRIGGER_FILE  = os.path.expanduser("~/.claude/skills/dnd/display/.input_trigger")
 QUEUE_FILE    = os.path.expanduser("~/.claude/skills/dnd/display/.input_queue")
 
-# ─── LAN mode ─────────────────────────────────────────────────────────────────
+# ─── LAN / TLS mode ───────────────────────────────────────────────────────────
 # Pass --lan to bind on 0.0.0.0 and protect write endpoints with a token.
 # Pass --tls (requires --lan) to enable HTTPS with a self-signed cert.
 # Without --lan the server binds to localhost only; no token is required.
@@ -1050,6 +1050,10 @@ def stats():
         if "factions" in data:
             _current_stats["factions"] = data["factions"]
 
+        # quests replaces entirely ([] clears)
+        if "quests" in data:
+            _current_stats["quests"] = data["quests"]
+
         current = dict(_current_stats)
 
     # autorun_waiting / autorun_cycle — display-only signals, not stored in stats
@@ -1061,7 +1065,7 @@ def stats():
                 _autorun_cycle = None
         _broadcast({"autorun_waiting": bool(data["autorun_waiting"])})
         if not any(k in data for k in ("players", "turn_order", "world_time", "factions",
-                                        "replace_players", "sheet", "autorun_cycle")):
+                                        "quests", "replace_players", "sheet", "autorun_cycle")):
             return "", 204
 
     if "autorun_cycle" in data:
