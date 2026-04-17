@@ -336,16 +336,17 @@ pip3 install -r requirements.txt
 ```
 Terminal (run claude directly — no wrapper needed)
     ↓ send.py calls per narration block / dice roll / stat change
-Flask on https://localhost:5001 (app.py — HTTPS, self-signed cert)
+Flask on http://localhost:5001 (app.py — HTTP by default)
     ↓ Server-Sent Events
 Browser tab → Chromecast → TV
 ```
 
 **Start the display:**
 ```bash
-bash ~/.claude/skills/dnd/display/start-display.sh          # localhost
-bash ~/.claude/skills/dnd/display/start-display.sh --lan    # LAN mode (phones, tablets)
-open https://localhost:5001                                  # open browser before /dnd load
+bash ~/.claude/skills/dnd/display/start-display.sh               # localhost, HTTP (default)
+bash ~/.claude/skills/dnd/display/start-display.sh --lan         # LAN mode, HTTP
+bash ~/.claude/skills/dnd/display/start-display.sh --lan --tls  # LAN mode, HTTPS
+open http://localhost:5001                                        # open browser before /dnd load
 ```
 
 `start-display.sh` always force-kills any previous instance before starting — no manual pre-kill needed.
