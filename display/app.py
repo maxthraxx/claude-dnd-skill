@@ -31,7 +31,7 @@ import sys
 import threading
 from collections import deque
 from typing import Optional
-from flask import Flask, Response, request, render_template, jsonify
+from flask import Flask, Response, request, render_template, jsonify, send_from_directory
 from flask_cors import CORS
 
 LOG_FILE      = os.path.expanduser("~/.claude/skills/dnd/display/text_log.json")
@@ -921,6 +921,20 @@ def _broadcast(payload: dict) -> None:
 def index():
     # Pass LAN token to template so the browser can authenticate /help-request
     return render_template("index.html", lan_token=_lan_token or "")
+
+
+@app.route("/icons/<path:filename>")
+def serve_icon(filename):
+    """Serve icons, favicon, and brand assets from display/icons/."""
+    _icons_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icons")
+    return send_from_directory(_icons_dir, filename)
+
+
+@app.route("/favicon.ico")
+def favicon():
+    _icons_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icons")
+    return send_from_directory(_icons_dir, "favicon.ico",
+                               mimetype="image/vnd.microsoft.icon")
 
 
 @app.route("/srd-lookup")

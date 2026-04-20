@@ -8,6 +8,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<link rel="icon" type="image/x-icon"  href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32"  href="/icons/app_icon_32.png">
+<link rel="apple-touch-icon" sizes="180x180"      href="/icons/app_icon_180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/app_icon_192.png">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -270,7 +274,7 @@
 
   /* ── Dice result blocks ── */
   .dice-block {
-    margin: 0.4em 0 1.6em;
+    margin: -1em 0 1em;
     opacity: 0;
     animation: fadeIn 0.3s ease forwards;
     text-align: center;
@@ -439,8 +443,8 @@
   #sidebar-toggle {
     position: fixed;
     left: 28px;
-    top: 32px;
-    z-index: 6;
+    top: 94px;
+    z-index: 8;
     background: none;
     border: none;
     cursor: pointer;
@@ -468,7 +472,7 @@
     scrollbar-width: none;
     background: linear-gradient(to right, rgba(0,0,0,0.6) 70%, transparent);
     border-right: 1px solid rgba(180,140,60,0.15);
-    padding: 10px 12px 16px 28px;
+    padding: 54px 12px 16px 28px;
     opacity: 0;
     transition: opacity 0.7s ease, transform 0.4s ease;
     transform: translateX(0);
@@ -496,19 +500,20 @@
     text-transform: uppercase;
     color: rgba(200,165,80,0.9);
     margin-bottom: 2px;
+    padding-right: 34px;
   }
   .sb-identity {
     font-size: 10px;
     color: rgba(200,185,150,0.5);
     line-height: 1.4;
     margin-bottom: 8px;
+    padding-right: 34px;
   }
 
   /* ── HP row ── */
   .sb-hp-row {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     margin-bottom: 3px;
   }
   .sb-label {
@@ -517,11 +522,13 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     color: rgba(180,140,60,0.5);
+    margin-left: 5px;
   }
   .sb-hp-nums {
     font-family: 'Cinzel', serif;
     font-size: 10px;
     color: rgba(220,200,160,0.75);
+    margin-left: auto;
   }
   .sb-bar-track {
     height: 3px;
@@ -544,8 +551,7 @@
   /* ── XP row ── */
   .sb-xp-row {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     margin-top: 4px;
     margin-bottom: 2px;
   }
@@ -553,6 +559,7 @@
     font-family: 'Cinzel', serif;
     font-size: 9px;
     color: rgba(180,140,60,0.55);
+    margin-left: auto;
   }
   .sb-xp-bar { background: rgba(180,140,60,0.4); }
 
@@ -738,9 +745,9 @@
     height: 1px; background: rgba(180,140,60,0.12); margin: 15px 0;
   }
   .sm-section-title {
-    font-family: 'Cinzel', serif; font-size: 8.5px;
+    font-family: 'Cinzel', serif; font-size: 11px;
     letter-spacing: 3px; text-transform: uppercase;
-    color: rgba(180,140,60,0.5); margin-bottom: 10px;
+    color: rgba(180,140,60,0.65); margin-bottom: 10px;
   }
   .sm-combat-strip {
     display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 2px;
@@ -1466,6 +1473,88 @@
     transform: translateX(14px);
     background: rgba(220,180,70,0.92);
   }
+
+  /* ── Corner logo ── */
+  #corner-logo {
+    position: fixed;
+    top: 22px; left: 22px;
+    width: 68px; height: 68px;
+    object-fit: contain;
+    opacity: 0.72;
+    z-index: 8;
+    pointer-events: none;
+    filter: drop-shadow(0 0 8px rgba(177,77,255,0.4));
+    transition: opacity 0.3s;
+  }
+  #corner-logo:hover { opacity: 1; pointer-events: all; }
+
+  /* ── Dice block icon ── */
+  .dice-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .dice-block-icon {
+    width: 48px; height: 48px;
+    opacity: 0.65;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 8px rgba(177,77,255,0.55));
+  }
+
+  /* ── Sidebar row icons ── */
+  .sb-row-icon {
+    width: 16px; height: 16px;
+    opacity: 0.65;
+    flex-shrink: 0;
+    margin-top: 1px;
+    filter: drop-shadow(0 0 3px rgba(57,255,20,0.4));
+  }
+
+  /* ── Turn tracker icons ── */
+  .sb-turn-item.sb-turn-has-icon {
+    padding-left: 2px;
+  }
+  .sb-turn-item.sb-turn-has-icon::before {
+    display: none;
+  }
+  .sb-turn-icon {
+    width: 16px; height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+    filter: drop-shadow(0 0 4px rgba(177,77,255,0.45));
+  }
+
+  /* ── Class icons ── */
+  .sb-player { position: relative; }
+  .sb-class-icon {
+    position: absolute;
+    top: 0; right: 0;
+    width: 30px; height: 30px;
+    opacity: 0.3;
+    filter: drop-shadow(0 0 6px rgba(177,77,255,0.5));
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .sb-player:hover .sb-class-icon { opacity: 0.6; }
+  .sm-header-icon {
+    position: absolute;
+    top: 44px; right: 34px;
+    width: 100px; height: 100px;
+    opacity: 0.5;
+    filter: drop-shadow(0 0 14px rgba(177,77,255,0.55));
+    pointer-events: none;
+  }
+
+  /* ── Sheet modal section icons ── */
+  .sheet-section-icon {
+    width: 38px; height: 38px;
+    opacity: 0.85;
+    filter: drop-shadow(0 0 4px rgba(57,255,20,0.4));
+    vertical-align: middle;
+    margin-right: 8px;
+  }
 </style>
 </head>
 <body>
@@ -1485,6 +1574,9 @@
 <div id="frame"></div>
 <div id="scene-indicator">— The Inn —</div>
 <div id="bottom-fade"></div>
+
+<!-- Corner logo -->
+<img id="corner-logo" src="/icons/logo_primary_fullcolor.png" alt="D20 Neural Core">
 
 <!-- Sidebar toggle button -->
 <button id="sidebar-toggle" title="Toggle character sidebar">◀ Hide</button>
@@ -2380,6 +2472,51 @@ function startTyping() {
   typeNextChar();
 }
 
+// ── Block type badge detection ───────────────────────────────────────────────
+// ── Class icon mapping ──────────────────────────────────────────────
+const _CLASS_ICONS = {
+  barbarian: 'class_barbarian', bard:      'class_bard',
+  cleric:    'class_cleric',    druid:     'class_druid',
+  fighter:   'class_fighter',   monk:      'class_monk',
+  paladin:   'class_paladin',   ranger:    'class_ranger',
+  rogue:     'class_rogue',     sorcerer:  'class_sorcerer',
+  warlock:   'class_warlock',   wizard:    'class_wizard',
+  artificer: 'class_artificer',
+};
+function _classIconSrc(classStr) {
+  if (!classStr) return null;
+  const lower = classStr.toLowerCase();
+  for (const [key, file] of Object.entries(_CLASS_ICONS)) {
+    if (lower.includes(key)) return '/icons/' + file + '.png';
+  }
+  return null;
+}
+
+const _BLOCK_BADGES = [
+  { icon: 'attack',       words: ['attack','strikes','slash','stab','sword','blade','combat','initiative','damage','hit','miss','roll','dex','str','con','saving throw','critical','fumble'] },
+  { icon: 'chat',         words: ['says','replies','whispers','mutters','speaks','voice','asks','answers','"','dialogue','npc','turns to you'] },
+  { icon: 'crystal_ball', words: ['arcane','ritual','spell','magic','incantation','rune','sigil','cast','magical','energy crackles','glows','aura'] },
+  { icon: 'treasure',     words: ['gold','coin','loot','reward','chest','pouch','found','grants','gives you','item','platinum','gp','silver'] },
+  { icon: 'location',     words: ['travel','road','path','arrive','enter','city','town','village','dungeon','forest','mountain','shore','coast','door','gate'] },
+  { icon: 'heal',         words: ['heal','rest','recover','restore','health','potion','bandage','mend','wounds close','regain'] },
+  { icon: 'scroll',       words: ['quest','mission','task','objective','assignment','letter','note','parchment','message','contract'] },
+  { icon: 'faction',      words: ['faction','guild','order','council','alliance','sworn','allegiance','representative','envoy'] },
+];
+
+function _addBlockBadge(el) {
+  const text = (el.textContent || '').toLowerCase();
+  for (const { icon, words } of _BLOCK_BADGES) {
+    if (words.some(w => text.includes(w))) {
+      const img = document.createElement('img');
+      img.src = '/icons/' + icon + '.png';
+      img.className = 'block-badge';
+      img.alt = icon;
+      el.appendChild(img);
+      return;
+    }
+  }
+}
+
 function flushNewBlock() {
   // Finalise the current block and start a fresh one next time
   if (currentCursor && currentCursor.parentNode) {
@@ -2545,6 +2682,32 @@ function renderNPCBlock(name, text, isReplay) {
   _reanchorCursor();
 }
 
+// ── Dice block icon detection ─────────────────────────────────────────
+function _diceRollIcon(text) {
+  const t = text.toLowerCase();
+  // Highest-stakes — check first
+  if (/death save|death saving|critical hit|fumble/.test(t))             return 'dragon';
+  // Spell
+  if (/spell attack|concentration|cantrip|cast/.test(t))                 return 'spellbook';
+  // Potion / medicine
+  if (/potion|medicine|alchemist/.test(t))                               return 'potion';
+  // Mystical sensing
+  if (/insight|arcana|divination|perception/.test(t))                    return 'crystal_ball';
+  // Combat
+  if (/attack|vs ac|\bhit\b|\bmiss\b|slashing|piercing|bludgeoning|necrotic|radiant|fire|cold|lightning|damage/.test(t)) return 'attack';
+  // Saving throws
+  if (/saving throw|save dc|\bsave\b|con save|dex save|wis save|str save|int save|cha save/.test(t)) return 'shield';
+  // Knowledge checks
+  if (/investigation|history|nature|religion|survival/.test(t))          return 'scroll';
+  // Social / physical skills
+  if (/stealth|sleight|deception|persuasion|intimidation|performance|acrobatics|athletics/.test(t)) return 'dagger';
+  // Healing
+  if (/heal|restore|hit point|recover/.test(t))                          return 'heal';
+  // Initiative
+  if (/initiative/.test(t))                                              return 'timer';
+  return null;
+}
+
 // ── Dice result block ─────────────────────────────────────────────────
 function renderDiceBlock(text, isReplay) {
   _flushForBlock();
@@ -2557,6 +2720,18 @@ function renderDiceBlock(text, isReplay) {
     .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
     .replace(/\r/g, '');
 
+  // Icon on left based on roll type
+  const iconName = _diceRollIcon(cleaned);
+  if (iconName) {
+    const ico = document.createElement('img');
+    ico.src = '/icons/' + iconName + '.png';
+    ico.className = 'dice-block-icon';
+    ico.alt = '';
+    block.appendChild(ico);
+  }
+
+  // Wrap results so they flex as a group
+  const resultsWrap = document.createElement('div');
   let hasCrit = false, hasFumble = false;
   cleaned.split('\n').forEach(line => {
     const trimmed = line.trim();
@@ -2564,10 +2739,11 @@ function renderDiceBlock(text, isReplay) {
     const el = document.createElement('div');
     el.className = 'dice-result';
     el.textContent = trimmed;
-    block.appendChild(el);
+    resultsWrap.appendChild(el);
     if (/CRITICAL HIT/i.test(trimmed)) hasCrit = true;
     if (/FUMBLE/i.test(trimmed))        hasFumble = true;
   });
+  block.appendChild(resultsWrap);
 
   if (!isReplay) {
     if (hasCrit)   triggerFlash('crit');
@@ -2631,7 +2807,9 @@ function renderInspirationBlock(name) {
   block.className = 'inspiration-block';
   const title = document.createElement('div');
   title.className = 'inspiration-title';
-  title.textContent = `✦  ${name}  ✦`;
+  title.innerHTML = `<img src="/icons/focus.png" style="width:22px;height:22px;vertical-align:middle;opacity:0.85;margin-right:10px;filter:drop-shadow(0 0 6px rgba(220,190,60,0.6))">` +
+    `${name}` +
+    `<img src="/icons/focus.png" style="width:22px;height:22px;vertical-align:middle;opacity:0.85;margin-left:10px;filter:drop-shadow(0 0 6px rgba(220,190,60,0.6))">`;
   const sub = document.createElement('div');
   sub.className = 'inspiration-sub';
   sub.textContent = 'Inspiration';
@@ -2850,6 +3028,14 @@ function _buildPlayerCard(p, solo) {
   card.className = 'sb-player';
   card.dataset.playerName = p.name;
 
+  // Class icon (top-right corner)
+  const classIco = _classIconSrc(p.class);
+  if (classIco) {
+    const ico = document.createElement('img');
+    ico.src = classIco; ico.className = 'sb-class-icon'; ico.alt = '';
+    card.appendChild(ico);
+  }
+
   // Name
   const nameEl = document.createElement('div');
   nameEl.className = 'sb-name';
@@ -2860,17 +3046,27 @@ function _buildPlayerCard(p, solo) {
   const identEl = document.createElement('div');
   identEl.className = 'sb-identity';
   const parts = [];
-  if (p.race)  parts.push(p.race);
-  if (p.class) parts.push(p.class + (p.level ? ' ' + p.level : ''));
-  if (p.background) parts.push(p.background);
-  identEl.textContent = parts.join(' · ') || '—';
+  // Line 1: Race · BaseClass Level   Line 2: Subclass (Background)
+  // p.class may be "Rogue/Thief (Criminal)" — split on "/" if present
+  let baseClass = p.class || '';
+  let subLine = p.background || '';
+  if (baseClass.includes('/')) {
+    const slashIdx = baseClass.indexOf('/');
+    subLine = baseClass.slice(slashIdx + 1).trim() + (p.background ? ' · ' + p.background : '');
+    baseClass = baseClass.slice(0, slashIdx).trim();
+  }
+  const line1 = [];
+  if (p.race)    line1.push(p.race);
+  if (baseClass) line1.push(baseClass + (p.level ? ' ' + p.level : ''));
+  identEl.innerHTML = (line1.join(' · ') || '—') +
+    (subLine ? `<br><span style="opacity:0.7">${subLine}</span>` : '');
   card.appendChild(identEl);
 
   // HP
   const hp = p.hp || {};
   const hpRow = document.createElement('div');
   hpRow.className = 'sb-hp-row';
-  hpRow.innerHTML = `<span class="sb-label">HP</span>
+  hpRow.innerHTML = `<img src="/icons/enemy.png" class="sb-row-icon" alt=""><span class="sb-label">HP</span>
     <span class="sb-hp-nums">${hp.current ?? '—'} / ${hp.max ?? '—'}</span>`;
   card.appendChild(hpRow);
 
@@ -2898,7 +3094,7 @@ function _buildPlayerCard(p, solo) {
   if (xp.current != null) {
     const xpRow = document.createElement('div');
     xpRow.className = 'sb-xp-row';
-    xpRow.innerHTML = `<span class="sb-label">XP</span>
+    xpRow.innerHTML = `<img src="/icons/ability.png" class="sb-row-icon" alt=""><span class="sb-label">XP</span>
       <span class="sb-xp-nums">${xp.current} / ${xp.next ?? '?'}</span>`;
     card.appendChild(xpRow);
     const xpTrack = document.createElement('div');
@@ -3064,6 +3260,18 @@ function openSheet(name) {
   const content = document.getElementById('sheet-content');
   content.innerHTML = '';
 
+  // Class icon in sheet panel top-right (clean up previous if any)
+  const panel = document.getElementById('sheet-panel');
+  const prevIco = document.getElementById('sm-class-ico');
+  if (prevIco) prevIco.remove();
+  const sheetClassIco = _classIconSrc(p.class);
+  if (sheetClassIco) {
+    const ico = document.createElement('img');
+    ico.id = 'sm-class-ico'; ico.className = 'sm-header-icon';
+    ico.src = sheetClassIco; ico.alt = '';
+    panel.appendChild(ico);
+  }
+
   // Header
   const nameEl = document.createElement('div');
   nameEl.className = 'sm-name';
@@ -3143,7 +3351,7 @@ function openSheet(name) {
     content.appendChild(_smDivider());
     const title = document.createElement('div');
     title.className = 'sm-section-title';
-    title.textContent = 'Attacks';
+    title.innerHTML = '<img src="/icons/dagger.png" class="sheet-section-icon" alt="">Attacks';
     content.appendChild(title);
     const table = document.createElement('table');
     table.className = 'sm-attacks-table';
@@ -3173,7 +3381,7 @@ function openSheet(name) {
     content.appendChild(_smDivider());
     const title = document.createElement('div');
     title.className = 'sm-section-title';
-    title.textContent = 'Spellcasting';
+    title.innerHTML = '<img src="/icons/crystal_ball.png" class="sheet-section-icon" alt="">Spellcasting';
     content.appendChild(title);
     // Derive live slot string from spell_slots object if available; fall back to static string
     let _slotsStr = sp.slots || '';
@@ -3234,7 +3442,7 @@ function openSheet(name) {
     content.appendChild(_smDivider());
     const title = document.createElement('div');
     title.className = 'sm-section-title';
-    title.textContent = 'Features & Passives';
+    title.innerHTML = '<img src="/icons/scroll.png" class="sheet-section-icon" alt="">Features & Passives';
     content.appendChild(title);
     sheet.features.forEach(f => {
       const el = document.createElement('div');
@@ -3257,7 +3465,7 @@ function openSheet(name) {
     content.appendChild(_smDivider());
     const title = document.createElement('div');
     title.className = 'sm-section-title';
-    title.textContent = 'Inventory';
+    title.innerHTML = '<img src="/icons/pack.png" class="sheet-section-icon" alt="">Inventory';
     content.appendChild(title);
     const list = document.createElement('ul');
     list.className = 'sm-inventory-list';
@@ -3612,8 +3820,10 @@ function updateStats(stats) {
       list.innerHTML = '';
       (merged.order || []).forEach(name => {
         const el = document.createElement('div');
-        el.className = 'sb-turn-item' + (name === merged.current ? ' sb-turn-current' : '');
-        el.textContent = name;
+        el.className = 'sb-turn-item sb-turn-has-icon' + (name === merged.current ? ' sb-turn-current' : '');
+        const isPC = name in _playerData;
+        const iconSrc = isPC ? '/icons/helmet.png' : '/icons/enemy.png';
+        el.innerHTML = `<img src="${iconSrc}" class="sb-turn-icon" alt="">${name}`;
         list.appendChild(el);
       });
     }
