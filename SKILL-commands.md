@@ -26,15 +26,42 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
 9. **2 Factions** — archetype, all fields including current activity. Write to `## Factions` in world.md. Write one-line faction states to `state.md → ## World State`.
 10. **3 NPCs with relationship web** — full entries (role, stats, demeanor, motivation, secret, speech quirk, faction, current goal, schedule, personality axes). Generate all three first, then fill Relationships (every NPC needs ≥2 links to others). Update index table.
 11. **3–5 Quest Seeds** from threat, factions, mystery, NPC motivations. Write to `## Quest Seed Bank` in world.md.
-12. Write state.md with session count 0, starting location.
-13. Confirm creation, offer `/dnd character new`.
+12. **Dynamic Campaign Arc** — auto-generate the arc from all world data just created. Use Opus for this step. Ask: *"Generate a committed narrative arc? [y/n — recommended]"*
+
+   **If yes:** Drawing from theme, threat arc stages, factions, Three Truths, NPC motivations, and quest seeds, derive:
+   - **`theme`** — one sentence: what is this story ultimately about? Not the threat — its meaning.
+   - **`resolution`** — the committed endpoint shape: if the party succeeds, what's the emotional truth? Keep specific events open; commit to the shape.
+   - **Acts 1–3**, each with 2 beats. Each beat has:
+     - `label` — a dramatic name
+     - `what_changes` — before/after: what's fundamentally different once this lands?
+     - `world_pressure` — the specific faction or NPC move (naming actual entities from this world) that makes the beat feel inevitable
+   - **`steering_notes`** — how to reach the first beat without forcing it
+
+   Beat layout:
+   - Act 1: **1a Inciting Incident** (the threat becomes personal for the party), **1b Complication** (the problem is bigger or stranger than it first appeared)
+   - Act 2: **2a Midpoint Shift** (what the party *thought* they were doing changes), **2b All Is Lost** (a genuine setback — something fails, is lost, or collapses)
+   - Act 3: **3a Final Confrontation** (the decisive moment the campaign turns on), **3b Resolution** (what's different about the world and the characters after)
+
+   Write to `state.md → ## Campaign Arc` with `type: dynamic`. Deliver a one-paragraph arc summary to the DM.
+
+   **If no:** Write `type: sandbox` to `## Campaign Arc`. The story remains open-ended with no arc tracking.
+
+13. Write state.md with session count 0, starting location.
+14. Confirm creation, offer `/dnd character new`.
 
 ---
 
 ## `/dnd load <campaign-name>`
 1. Ask: *"Start the cinematic display companion? [y/n]"*
    - Same display start/LAN flow as `/dnd new` step 1.
-   - **Session tail replay:** before clearing the display, check if `~/.claude/skills/dnd/display/session_tail.json` exists. If it does, read it. After `--clear` and full stats push (step 4 below), replay the tail by sending each entry via the appropriate `send.py` flag (`--player`, `--npc`, `--dice`, or plain stdin narration). This restores the last scene to the display before the recap. The tail is written continuously by `app.py` — it always contains the last session's final exchanges regardless of how the session ended.
+   - **Session tail replay:** before clearing the display, check if `~/.claude/skills/dnd/display/session_tail.json` exists. If it does, read it. After `--clear` and full stats push (step 4 below), replay the tail by sending each entry via the appropriate `send.py` flag. Entry type → flag mapping:
+     - `player` key present → `send.py --player <name>` with text via stdin
+     - `npc` key present → `send.py --npc <name>` with text via stdin
+     - `dice` key present → `send.py --dice` with text via stdin
+     - `xp_award` key present → `send.py --xp-award '<json of the xp_award sub-dict>'` (the sub-dict already has a `summary` field so no reconstruction needed)
+     - `inspiration_award` key present → `send.py --inspiration-award '<name>'`
+     - none of the above (plain DM narration) → `send.py` with text via stdin
+     This restores the last scene to the display before the recap. The tail is written continuously by `app.py` — it always contains the last session's final exchanges regardless of how the session ended.
    - Clear previous transcript: `python3 ~/.claude/skills/dnd/display/push_stats.py --clear`
    - Register active campaign for DM Help: `python3 ~/.claude/skills/dnd/display/push_stats.py --set-campaign <campaign-name>`
    - Ask: *"Enable autorun mode for player input? [y/n]"*
@@ -60,7 +87,7 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
          "hp": {"current": N, "max": N, "temp": 0},
          "ac": N,
          "speed": 30,
-         "hit_dice": {"total": N, "remaining": N, "die": "d8"},
+         "hit_dice": {"max": N, "remaining": N, "die": "d8"},
          "xp": {"current": N, "next": N},
          "conditions": [],
          "concentration": null,
@@ -100,7 +127,7 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
 
    Quest JSON structure:
    ```json
-   [{"name":"The Suppressed Ward-Point","status":"resolved"},{"name":"The Hollow King","status":"threat"}]
+   [{"name":"The Missing Shipment","status":"resolved"},{"name":"Keth the Collector","status":"threat"}]
    ```
    Quest `status` values: `active` (amber), `threat` (red), `resolved` (green), `failed` (muted). Use `[]` to clear all quests:
    ```bash
@@ -112,8 +139,118 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
 
 ---
 
+## `/dnd import <filepath> [campaign-name]`
+
+Import a pre-written campaign from a source file (PDF, MD, TXT, Obsidian note, DOCX) and create a playable campaign from it.
+
+**Supported file types:** `.pdf` `.md` `.txt` `.obsidian` `.markdown` `.docx`
+
+### Step 1 — Extract source text
+```bash
+python3 ~/.claude/skills/dnd/scripts/import_campaign.py "<filepath>" --info
+```
+Print file info. If word count is over 4000, chunk the source:
+```bash
+python3 ~/.claude/skills/dnd/scripts/import_campaign.py "<filepath>" --chunks  # total chunks
+python3 ~/.claude/skills/dnd/scripts/import_campaign.py "<filepath>" --chunk 0  # first chunk
+```
+For short sources (under 4000 words), read in full:
+```bash
+python3 ~/.claude/skills/dnd/scripts/import_campaign.py "<filepath>"
+```
+
+### Step 2 — Analyse structure
+Read the extracted text and identify:
+- **Campaign title and system**
+- **Structure type:** `linear` (scene chain A→B→C) | `hub-and-spoke` (central hub + spoke locations, player-driven order) | `faction-web` (multi-faction city/complex, overlapping arcs)
+- **Acts and chapters** — numbered sections, chapter headings, or named scenes
+- **Key beats** — required story events the DM must deliver (boss reveals, faction turns, mandatory encounters)
+- **Locations** — distinct named places with descriptions
+- **NPCs** — names, roles, motivations, relationships, stat blocks if present
+- **Factions** — groups with agendas, relationships to party
+- **Quest hooks and seeds** — explicit adventure hooks, side quests, optional encounters
+- **Starting conditions** — where does the party begin, what level, what's the inciting event
+
+For large sources, read all chunks before proceeding.
+
+### Step 3 — Confirm campaign name
+If `[campaign-name]` not supplied, suggest one from the title and ask to confirm.
+
+### Step 4 — Display summary and confirm
+Show a structured summary before writing any files:
+
+```
+Title:    <source title>
+Type:     structured / <structure type>
+Acts:     N  |  Chapters: N  |  Key beats: N
+NPCs:     N named  |  Factions: N
+Locations: N distinct
+
+Campaign name: <name>
+Campaign dir:  ~/.claude/dnd/campaigns/<name>/
+
+Proceed? [y/n]
+```
+
+### Step 5 — Create campaign files
+On confirmation:
+
+1. `mkdir -p ~/.claude/dnd/campaigns/<name>/characters`
+2. Copy templates from `~/.claude/skills/dnd/templates/`
+3. Write **world.md**:
+   - `## World Foundations` — setting, geography, tone, magic level, calendar if present
+   - `## Three Truths` — one settlement, one threat, one mystery (drawn from source)
+   - `## Threat Escalation Arc` — map source acts to the 5-stage table; set stage 1
+   - `## Factions` — all factions with archetype, current activity, relationship to party
+   - `## Quest Seed Bank` — all explicit hooks + 2–3 implied side threads
+   - `## Adventure Nodes` — named locations with one-line descriptions
+
+4. Write **npcs.md** index table (one row per NPC: name, role, location, one-line demeanor)
+
+5. Write **npcs-full.md** — full entry for each named NPC:
+   - Role, motivation, secret, speech quirk, faction affiliation
+   - Relationships to other NPCs (min 2 per NPC)
+   - Stat block summary if present in source
+
+6. Write **state.md** from template:
+   - Populate `## Current Situation` — starting location and party placeholder
+   - Populate `## World State` — in-world date if given, factions, threat arc stage 1
+   - Populate `## Campaign Arc` — full act/chapter structure with key beats, telegraph scenes, and steering notes (see format in template)
+   - Leave `## Active Quests`, `## Session Flags`, `## DM Style Notes` as template defaults
+
+7. Write **session-log.md** with Session 0 import record:
+   ```
+   ## Session 0 — Import — <date>
+   Source: <filepath>
+   Imported: <N> acts, <N> chapters, <N> NPCs, <N> locations
+   ```
+
+### Step 6 — Gap-fill wizard
+After writing files, identify anything the source left ambiguous:
+- If starting level not specified → ask
+- If party size not specified → ask
+- If calendar/in-world date absent → offer to generate or leave blank
+- If tone not clear from source → offer Tone/Genre Wizard
+
+### Step 7 — Confirm and offer next step
+Print summary of files written. Offer:
+```
+Campaign "<name>" created from <source title>.
+→ /dnd character new      — create your character
+→ /dnd load <name>        — start playing immediately
+```
+
+---
+
 ## `/dnd save`
 Write session events to session-log.md, update state.md (location, active quests, party HP/resources, recent events), update any characters/*.md that changed. Mirror each updated character to global roster (`~/.claude/dnd/characters/<name>.md`).
+
+**Update `## Live State Flags` in state.md on every save.** This section is the compaction-resistant anchor — it holds facts that prose summaries flatten. After each session, review and update:
+- **Cover:** each PC's active cover, its status (INTACT / BLOWN / PARTIAL), and the one-line reason. Remove covers that are no longer active.
+- **Faction stances:** each faction with non-neutral standing toward the party. Format: `[Faction]: [Allied/Friendly/Neutral/Suspicious/Hostile] — [one-line reason]`. Remove factions that have returned to neutral.
+- **NPC dispositions:** each NPC with changed or notable standing. Format: `[Name]: [disposition] — [one-line reason]`. Remove NPCs who have returned to baseline.
+
+If nothing changed in a category this session, leave it as-is. If a fact was wrong in the previous save, correct it.
 
 Then update `## Faction Moves` in state.md: for each active faction, answer *"what did they do while the party was occupied?"* One line per faction — even if nothing visible yet. Confirm what was written.
 
@@ -140,6 +277,9 @@ The continuity summary is what stays hot in context. The full verbose log is in 
    b. Ask: *"Quick calibration — what worked this session, and what would you adjust next time?"* Write answers to `### DM Calibration`. If skipped, leave blank.
    c. Update `## World State` in state.md: check whether events advanced the threat arc stage, shifted faction states, or changed the in-world date. Update all three.
    d. If the calibration response reveals a new pattern (or confirms/contradicts an existing one), update `## DM Style Notes` in state.md. Add new bullets; refine existing ones if the pattern has sharpened. Do not log every session — only update when something genuinely new or changed is observed.
+   e. **Arc check** (dynamic arcs only — skip for sandbox/structured): If `## Campaign Arc` has `type: dynamic`, review this session's key events against `outstanding_beats`. Ask: *"Did any arc beats land this session? [beat id(s) like '1b 2a', or 'none']"*
+      - If beats landed: run `/dnd arc advance <beat-id>` for each. Update `steering_notes` for the next outstanding beat.
+      - If none: check whether `world_pressure` for the next outstanding beat should appear in this session's Faction Moves entry. If yes, note it there — it should land next session.
 2. If `_display_running = true`, stop the display:
    ```bash
    kill $(cat ~/.claude/skills/dnd/display/app.pid 2>/dev/null) 2>/dev/null
@@ -327,6 +467,43 @@ Read and display world.md.
 
 ## `/dnd quests`
 Read `state.md` → display Active Quests and Open Threads sections.
+
+---
+
+## `/dnd arc [status|advance|revise|view]`
+
+Manage the dynamic campaign arc. Active only when `state.md → ## Campaign Arc` has `type: dynamic` — no-op for sandbox and structured campaigns.
+
+- **`/dnd arc`** or **`/dnd arc status`** — print current act, current beat label, `what_changes` for the current beat, and `steering_notes`. Quick reference, one screen.
+- **`/dnd arc advance [beat-id]`** — mark the named beat complete (current beat if omitted). Remove from `outstanding_beats`. Advance `current_beat` to the next pending beat. If all beats in an act are complete, advance `current_act`. Update `steering_notes` to describe how to reach the newly current beat without forcing it.
+
+  **When the final beat (3b) is marked complete — arc continuation:**
+  `outstanding_beats` is now empty. Ask: *"The arc is complete. Continue the campaign with a new arc? [y/n]"*
+  - **Yes** → run `/dnd arc new` (see below).
+  - **No** → set `type: sandbox` and clear `outstanding_beats`. The campaign continues open-ended from the resolution state.
+
+- **`/dnd arc new`** — generate a new arc for a campaign that has completed its previous arc. Use Opus for this step.
+
+  The new arc must be **intentionally distinct** — not a continuation of the same conflict, but a new chapter that grows from the changed world. The resolution of arc N is the status quo of arc N+1.
+
+  Procedure:
+  1. Read the completed arc's `resolution` field — this is now the world's baseline.
+  2. Read `## DM Notes`, `## World State`, `## Faction Moves`, and any `## Continuity Archive` entries to understand what the world looks like post-resolution.
+  3. Derive the new arc from **the consequences** of what just resolved. Ask: *what problem did solving the last arc create? What power vacuum formed? What did the party's victory cost that now has to be reckoned with? What was ignored because the last arc demanded all attention?*
+  4. Generate a new full arc (theme, resolution, acts 1–3, 6 beats) using the same format as the initial arc. The new theme must be meaningfully different from the previous one — same world, new lens.
+  5. Archive the completed arc: move the current `acts` block, `theme`, and `resolution` into a new `## Arc History` section in state.md under `arc_N` (numbered), with a one-line summary of how it resolved.
+  6. Write the new arc to `## Campaign Arc`, incrementing `arc_number`. Set `current_act: 1`, `current_beat: "1a"`, `outstanding_beats` to all 6 beat ids.
+  7. Append to `revision_log`: `"<date>: Arc N complete. New arc N+1 generated. [one-line premise of the new arc]"`
+  8. Deliver a one-paragraph summary of the new arc's premise and how it differs from the previous one.
+
+- **`/dnd arc view`** — show full arc: theme, resolution, all acts and beats with completion status (current / complete / pending). If `## Arc History` exists, show a one-line summary of each completed arc above the current one.
+- **`/dnd arc revise`** — open revision flow for when the story has taken a major unexpected turn:
+  1. Show all outstanding beats.
+  2. Ask: *"What's changed in the story that the arc doesn't reflect?"*
+  3. Rewrite `what_changes` and/or `world_pressure` for affected outstanding beats to fit the new direction. Do not modify completed beats.
+  4. Append to `revision_log`: `"<date>: <what changed and why — one sentence>"`
+  5. Update `steering_notes`.
+  6. Confirm what was revised.
 
 ---
 

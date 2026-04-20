@@ -38,16 +38,16 @@ python3 ~/.claude/skills/dnd/scripts/xp.py calc --level 3 --players 2 --monsters
 
 # Award after a combat encounter — difficulty-rated (use when full monster list is unavailable):
 python3 ~/.claude/skills/dnd/scripts/xp.py award \
-  --campaign <name> --characters "Aldric,Mira" --difficulty hard --type combat
+  --campaign <name> --characters "Max of Thraxx,Ethros the 19th" --difficulty hard --type combat
 
 # Award after a combat encounter — exact CR calculation (preferred for standard combats):
 python3 ~/.claude/skills/dnd/scripts/xp.py award \
-  --campaign <name> --characters "Aldric,Mira" \
+  --campaign <name> --characters "Max of Thraxx,Ethros the 19th" \
   --monsters "goblin:1/4:3,hobgoblin:1:1" --note "Ambush in the alley"
 
 # Award for a qualifying non-combat encounter:
 python3 ~/.claude/skills/dnd/scripts/xp.py award \
-  --campaign <name> --characters "Aldric,Mira" --difficulty medium --type noncombat \
+  --campaign <name> --characters "Max of Thraxx,Ethros the 19th" --difficulty medium --type noncombat \
   --note "guild informant interrogation"
 ```
 
@@ -205,7 +205,7 @@ python3 ~/.claude/skills/dnd/display/push_stats.py --autorun-threshold 0   # res
 ```bash
 # Called at the start of each turn BEFORE processing the player's message.
 # Drains any actions queued from the display companion (e.g. iPad) and prints them.
-# Output: "[Aldric]: I draw my rapier" — empty if nothing queued. Clears the display indicator.
+# Output: "[Max of Thraxx]: I draw my rapier" — empty if nothing queued. Clears the display indicator.
 python3 ~/.claude/skills/dnd/display/check_input.py
 ```
 
@@ -245,30 +245,30 @@ CAMP=my-campaign
 
 # Timed effects — duration: 10r (rounds), 60m (minutes), 8h (hours), indef
 # Append 'conc' to mark as concentration (auto-sets concentration field)
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Aldric" "Web" 10r conc
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Mira" "Disguise Self" 1h
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Mira" "Hunter's Mark" indef
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect end   "Aldric" "Web"   # narrative end (broken/dispelled)
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect tick  "Aldric"         # call on actor's turn — decrements rounds, prints expiry
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Max of Thraxx" "Web" 10r conc
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Ethros the 19th" "Disguise Self" 1h
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect start "Ethros the 19th" "Hunter's Mark" indef
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect end   "Max of Thraxx" "Web"   # narrative end (broken/dispelled)
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP effect tick  "Max of Thraxx"         # call on actor's turn — decrements rounds, prints expiry
 
 # Conditions
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP condition add "Mira" poisoned
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP condition remove "Mira" poisoned
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP condition clear "Mira"
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP condition add "Ethros the 19th" poisoned
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP condition remove "Ethros the 19th" poisoned
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP condition clear "Ethros the 19th"
 
 # Concentration (auto-clears previous if switching spells)
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP concentrate "Aldric" "Bless"
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP concentrate "Aldric" break
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP concentrate "Max of Thraxx" "Bless"
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP concentrate "Max of Thraxx" break
 
 # Death saves
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP saves "Mira" success
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP saves "Mira" failure
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP saves "Mira" stable
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP saves "Mira" reset
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP saves "Ethros the 19th" success
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP saves "Ethros the 19th" failure
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP saves "Ethros the 19th" stable
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP saves "Ethros the 19th" reset
 
 # Status / clear
 python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP status
-python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP status "Mira"
+python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP status "Ethros the 19th"
 python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP clear           # conditions + concentration + effects
 python3 ~/.claude/skills/dnd/scripts/tracker.py -c $CAMP clear --all     # also clears death saves
 ```
@@ -314,7 +314,7 @@ CAMP=my-campaign
 python3 ~/.claude/skills/dnd/scripts/campaign_search.py -c $CAMP Lasswater
 
 # Narrow to specific files:
-python3 ~/.claude/skills/dnd/scripts/campaign_search.py -c $CAMP "Vael letter" --files log,archive
+python3 ~/.claude/skills/dnd/scripts/campaign_search.py -c $CAMP "merchant letter" --files log,archive
 
 # Multi-keyword AND search:
 python3 ~/.claude/skills/dnd/scripts/campaign_search.py -c $CAMP VARETH Kel

@@ -801,11 +801,18 @@ def _persist_stats() -> None:
 
 
 def _load_stats() -> None:
+    global _expected_count
     try:
         with open(STATS_FILE) as f:
             data = json.load(f)
         with _stats_lock:
             _current_stats.update(data)
+        # Initialise expected player count from persisted stats so solo-mode
+        # detection is correct immediately after restart, without waiting for
+        # the next /stats POST.
+        loaded_players = data.get("players", [])
+        if loaded_players:
+            _expected_count = max(1, len(loaded_players))
     except Exception:
         pass
 
@@ -927,14 +934,19 @@ def chunk():
         _persist_log()
         _persist_tail()
         _broadcast(payload)
-        # Also update player inspiration state in stats
+        # Also update player inspiration state in stats.
+        # NOTE: _persist_stats() acquires _stats_lock internally — capture the snapshot
+        # inside the lock, then call persist/broadcast OUTSIDE to avoid deadlock.
+        stats_snapshot = None
         with _stats_lock:
             players = _current_stats.setdefault("players", [])
             match = next((p for p in players if p.get("name", "").lower() == name.lower()), None)
             if match:
                 match["inspiration"] = True
-                _persist_stats()
-                _broadcast({"stats": dict(_current_stats)})
+                stats_snapshot = dict(_current_stats)
+        if stats_snapshot is not None:
+            _persist_stats()
+            _broadcast({"stats": stats_snapshot})
         return "", 204
 
     if is_xp_award:

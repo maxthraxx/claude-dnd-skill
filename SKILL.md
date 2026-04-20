@@ -119,6 +119,50 @@ Once a campaign is loaded, stay in DM mode. Interpret all player messages as in-
 - Foreshadow danger before it kills; reward preparation and clever thinking
 - After major choices, note what ripples forward: *"The merchant's eyes narrow — he'll remember this."*
 - **Before writing substantive dialogue or decisions for any named NPC**, read their full entry in `npcs-full.md` if one exists. The index row in `npcs.md` carries surface traits only — personality axes, relationships, hidden goals, and speech quirks are in the full entry and will drift without it. Do this proactively when a scene centers on that NPC, not only when `/dnd npc [name]` is called explicitly.
+- **Before any recap, status summary, or claim about faction standing, player cover, or NPC disposition — re-read the source, not the compacted context.** After context compaction, the DM's impression is a lossy summary of summaries and must not be trusted for specific facts. Re-read the *smallest section that covers the claim* — do not load full files when a targeted section suffices:
+  - **First stop:** `state.md → ## Live State Flags` — cover, faction stances, NPC dispositions in compact key-value form. Read this section alone for most recap claims; it is designed to answer them without a full file load.
+  - **If the claim isn't in Live State Flags:** read `state.md → ## Current Situation` and `## Recent Events` (targeted offset, not the full file).
+  - **For a specific NPC's attitude or goals:** read only that NPC's entry in `npcs-full.md`, not the whole file.
+  - **For a specific past event:** read `state.md → ## Continuity Archive` first; escalate to `session-log.md` only if the archive bullet is insufficient.
+  - **For PC sheet facts:** read `characters/<PC>.md`.
+
+  The constraint: one targeted Read per claim, not a full file reload. The player's trust in world continuity depends on accuracy; the session's momentum depends on not stalling to reload everything.
+
+**Structured campaign arc steering** (when `state.md → ## Campaign Arc` has `type: structured`):
+
+Read `## Campaign Arc` at every session load alongside `## DM Style Notes`. It contains the required beats for the current chapter. Apply these rules during play:
+
+1. **Telegraph before the beat.** Never deliver a required beat cold. First run the `telegraph_scene` for that chapter — a setup scene that naturally constrains the choice space so the beat feels earned, not forced. A good telegraph gives the player 2–3 apparent paths that all converge on the beat organically.
+
+2. **Steer with world pressure, not walls.** If players drift from the arc, apply indirect pressure first — NPC urgency, environmental escalation, rumour plants, faction moves that make inaction costly. Hard walls ("you can't go that way") are a last resort and should be disguised as fiction (a road is blocked, a storm is brewing) not mechanics.
+
+3. **Mark beats complete.** When a key beat lands, remove it from `outstanding_beats` in state.md at the next `/dnd save`. Update `current_chapter` when all beats in a chapter are resolved.
+
+4. **Respect player detours.** A side quest or unexpected tangent is not arc failure — it's DM craft. Run the detour fully. On return, use the `steering_notes` for the current chapter to re-establish momentum without retconning what happened.
+
+5. **Hub-and-spoke structure:** players may approach spoke locations in any order. Each spoke has its own chapter beats. Track which spokes are complete in `outstanding_beats`. The convergence point (final act) does not open until all required spokes are resolved unless the source explicitly allows skipping.
+
+6. **Do not reference the arc document to players.** The arc is a DM tool. Players experience it as natural story progression. Never say "you need to do X before Y" — show them why they want to.
+
+**Dynamic campaign arc steering** (when `state.md → ## Campaign Arc` has `type: dynamic`):
+
+Read `## Campaign Arc` at every session load alongside `## DM Style Notes`. The arc was auto-generated at campaign creation from the world's threat, factions, and Three Truths — and can be revised when major turns redirect the story. Apply these rules:
+
+1. **Know the destination.** The `resolution` field commits to a thematic endpoint — not specific events, but the shape of what resolves. When improvising, always ask: *does this scene move toward or away from that resolution?*
+
+2. **Beats are consequences, not events.** Each beat's `what_changes` defines what must be different in the story after the beat lands, not how it lands. This gives flexibility in HOW the beat arrives while committing to THAT it must arrive. "The party discovers the document" is an event. "The party realizes the threat was designed to outlast any single person" is a consequence — a dozen scenes could deliver it.
+
+3. **Apply `world_pressure` before each beat.** Each beat has a built-in faction or NPC move that creates the conditions for it. Run this as a visible world event — something the party encounters or hears about — before the beat lands. Never deliver a beat cold.
+
+4. **Mark beats at `/dnd end`.** After each session, check whether any outstanding beats landed. Mark them complete via `/dnd arc advance`. Update `steering_notes` for the next beat.
+
+5. **Revise rather than abandon.** When a player choice significantly redirects the story, use `/dnd arc revise`. Update outstanding beats to fit the new direction. Log the revision. The committed shape bends to the story; it does not break it.
+
+6. **The Midpoint Shift (beat 2a) is non-negotiable.** This is the moment where what the party *thought* they were doing gives way to what they're *actually* doing. Without it, act 2 drifts indefinitely. If beat 2a hasn't landed by halfway through your expected session count, escalate world pressure until it does.
+
+7. **All Is Lost (beat 2b) is earned, not punitive.** A genuine setback must precede the resolution — something fails, is lost, or collapses under the weight of the story. It comes from the world's logic, not arbitrary bad luck. The party should feel it coming and be unable to stop it.
+
+8. **Do not reference the arc document to players.** Players experience it as natural story progression.
 
 **Player input queue (display companion):**
 At the start of each turn, run `check_input.py` before processing the player's message. If it prints output, use those queued actions as part of (or all of) the player's action this turn. Empty output means no queued input — proceed normally. This is how the display companion's party input panel feeds into the session.
@@ -161,7 +205,7 @@ DNDEND
 ```bash
 # Hidden roll (silent in terminal, visible on display):
 ROLL=$(python3 ~/.claude/skills/dnd/scripts/dice.py d20+5 --silent)
-echo "Torben — Insight (reading Osk): d20+5 = $ROLL → [brief outcome]" | python3 ~/.claude/skills/dnd/display/send.py --dice
+echo "Ethros the 19th — Insight (reading Septemous): d20+5 = $ROLL → [brief outcome]" | python3 ~/.claude/skills/dnd/display/send.py --dice
 
 # Open roll:
 python3 ~/.claude/skills/dnd/scripts/dice.py d20+4 | python3 ~/.claude/skills/dnd/display/send.py --dice
@@ -171,7 +215,7 @@ Send the roll line **immediately after rolling**, before writing the narration r
 
 *NPC dialogue* — when an NPC speaks more than a line, send as `--npc <name>`:
 ```bash
-python3 ~/.claude/skills/dnd/display/send.py --npc "Osk" << 'DNDEND'
+python3 ~/.claude/skills/dnd/display/send.py --npc "Septemous" << 'DNDEND'
 "I've been waiting for you. Longer than you know."
 DNDEND
 ```
@@ -181,9 +225,9 @@ Brief NPC interjections within narration don't need a separate block.
 ```bash
 # With stat changes (any HP/slot/condition that changed this turn):
 python3 ~/.claude/skills/dnd/display/send.py \
-  --stat-hp "Aldric:12:17" \
-  --stat-slot-use "Mira:1" \
-  --stat-condition-add "Aldric:Poisoned" << 'DNDEND'
+  --stat-hp "Max of Thraxx:12:17" \
+  --stat-slot-use "Ethros the 19th:1" \
+  --stat-condition-add "Max of Thraxx:Poisoned" << 'DNDEND'
 [full narration text, word for word — every paragraph, closing prompt, roll outcome summaries]
 DNDEND
 
@@ -217,17 +261,17 @@ Multiple Bash tool calls = visible `⏺ Bash(...)` blocks fragmenting the CLI. U
 **Correct pattern:**
 ```bash
 # 1. Player action
-python3 ~/.claude/skills/dnd/display/send.py --player Serath << 'DNDEND'
-Serath draws her dagger and moves toward the gate.
+python3 ~/.claude/skills/dnd/display/send.py --player "Max of Thraxx" << 'DNDEND'
+Max of Thraxx draws her dagger and moves toward the gate.
 DNDEND
 
 # 2. Dice result
 python3 ~/.claude/skills/dnd/display/send.py --dice << 'DNDEND'
-Serath — Stealth: d20+7 = 21 → Clean.
+Max of Thraxx — Stealth: d20+7 = 21 → Clean.
 DNDEND
 
 # 3. DM narration + stat changes bundled
-python3 ~/.claude/skills/dnd/display/send.py --stat-hp "Serath:14:18" << 'DNDEND'
+python3 ~/.claude/skills/dnd/display/send.py --stat-hp "Max of Thraxx:14:18" << 'DNDEND'
 The gate swings inward on silence. Beyond: cold stone, darkness, the mineral smell of something very old.
 DNDEND
 
@@ -299,16 +343,16 @@ CAMP=<campaign-name>
 
 # After combat (exact CR calculation — preferred):
 python3 ~/.claude/skills/dnd/scripts/xp.py award \
-  --campaign $CAMP --characters "Aldric,Mira" \
+  --campaign $CAMP --characters "Max of Thraxx,Ethros the 19th" \
   --monsters "goblin:1/4:3,hobgoblin:1:1" --note "description"
 
 # After combat (difficulty-rated — use when monster CRs are unavailable):
 python3 ~/.claude/skills/dnd/scripts/xp.py award \
-  --campaign $CAMP --characters "Aldric,Mira" --difficulty hard --type combat
+  --campaign $CAMP --characters "Max of Thraxx,Ethros the 19th" --difficulty hard --type combat
 
 # After qualifying non-combat encounter:
 python3 ~/.claude/skills/dnd/scripts/xp.py award \
-  --campaign $CAMP --characters "Aldric,Mira" --difficulty medium --type noncombat \
+  --campaign $CAMP --characters "Max of Thraxx,Ethros the 19th" --difficulty medium --type noncombat \
   --note "brief description"
 
 # Preview before awarding:
@@ -319,7 +363,7 @@ Award XP at the **end of the scene** when the outcome is clear — not mid-comba
 
 **After running `xp.py award`, immediately send an XP award block to the display:**
 ```bash
-python3 ~/.claude/skills/dnd/display/send.py --xp-award '{"names":["Aldric","Mira"],"xp":250,"reason":"Encounter resolved","total":"3250 / 6500"}'
+python3 ~/.claude/skills/dnd/display/send.py --xp-award '{"names":["Max of Thraxx","Ethros the 19th"],"xp":250,"reason":"Watcher turned — double agent secured","total":"3250 / 6500"}'
 ```
 This fires a green-bordered block in the companion feed showing each character's name, XP gained, the reason, and their new running total. Players see it in the companion immediately — no separate announcement needed in narration.
 
