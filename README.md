@@ -19,7 +19,7 @@ There are two ways to play, and they serve different needs:
 
 **Improvised campaigns** — Claude generates the world from scratch and auto-creates a committed three-act narrative arc from the setting, factions, and threats it just built. The arc gives the story a defined shape without scripting what happens — beats are defined by consequence ("what changes") not by event, so Claude stays flexible on how each beat lands while committing to the fact that it must. The arc advances across sessions, can be revised when players redirect the story, and continues into a new arc when all six beats resolve. This is Claude as a full creative collaborator: world-builder, improv partner, and story architect in one.
 
-**Structured campaigns** — Use `/dnd import` to drop in a pre-written source (official WotC modules, published third-party campaigns, or a custom DM-written document in PDF, markdown, Obsidian, or DOCX format). Claude reads and chunks the source, extracts the structure type (linear, hub-and-spoke, or faction-web), and builds all campaign files automatically — acts, chapters, key story beats, telegraph scenes, NPCs, factions, locations, and quest hooks. The campaign runs with enforced deterministic structure: required beats must land in each chapter, Claude telegraphs before delivering them, and steers with world pressure rather than walls when players drift. Drop in the Lost Mine of Phandelver and Claude will run it chapter by chapter with the same twelve DM standards applied to every scene.
+**Structured campaigns** — Use `/dnd import` to drop in a pre-written source (official WotC modules, published third-party campaigns, or a custom DM-written document in PDF, markdown, DOCX, or plain text format). Claude reads and chunks the source, extracts the structure type (linear, hub-and-spoke, or faction-web), and builds all campaign files automatically — acts, chapters, key story beats, telegraph scenes, NPCs, factions, locations, and quest hooks. The campaign runs with enforced deterministic structure: required beats must land in each chapter, Claude telegraphs before delivering them, and steers with world pressure rather than walls when players drift. Drop in the Lost Mine of Phandelver and Claude will run it chapter by chapter with the same twelve DM standards applied to every scene.
 
 Both modes share the same DM engine. The [twelve applied behavioral standards](https://github.com/Bobby-Gray/claude-dnd-skill/blob/main/SKILL.md#what-makes-a-great-dm--applied-standards) are enforced as hard constraints in every session regardless of which mode you're in — improvised or structured, the DM improvises within situations, lets choices matter, makes every NPC a person, and controls pace deliberately.
 
@@ -49,7 +49,7 @@ If you're on Claude Code, you're in the right place.
 - **Persistent campaigns** — state, NPCs, quests, and characters survive across sessions in plain markdown files
 - **Two campaign modes** — improvised (Claude generates world + dynamic arc) or structured (import pre-written material and enforce its beats)
 - **Dynamic narrative arc** — auto-generated at `/dnd new` from the world's threat, factions, and setting; three acts, six beats defined by consequence not event; arc tracked across sessions, revised when players redirect the story, continued into a new arc when complete
-- **Campaign import** — `/dnd import` accepts PDF, markdown, Obsidian, DOCX, or plain text; extracts structure type, acts, chapters, key beats, telegraph scenes, NPCs, factions, and quest hooks; builds all campaign files automatically
+- **Campaign import** — `/dnd import` accepts PDF, markdown, DOCX, or plain text; extracts structure type, acts, chapters, key beats, telegraph scenes, NPCs, factions, and quest hooks; builds all campaign files automatically
 - **Portable characters** — bring your character into any campaign; level up, grow your stat tree, and carry your inventory and loot — or start fresh each time
 - **Full D&D 5e mechanics** — initiative, attacks, saving throws, spell slots, XP, levelling up, short/long rests
 - **Atmospheric DM** — dark fantasy tone, distinct NPC voices, hidden rolls, a world that reacts to choices
@@ -142,7 +142,7 @@ Once loaded, type naturally — no `/dnd` prefix needed. The DM interprets every
 | Command | Description |
 |---------|-------------|
 | `/dnd new <name>` | Create a new campaign — generates world seed, NPCs, starting location, and dynamic narrative arc |
-| `/dnd import <name> <source>` | Import a pre-written campaign from PDF, markdown, Obsidian, or DOCX; extracts structure and builds all campaign files |
+| `/dnd import <name> <source>` | Import a pre-written campaign from PDF, markdown, DOCX, or plain text; extracts structure and builds all campaign files |
 | `/dnd load <name>` | Load an existing campaign and enter DM mode |
 | `/dnd save` | Write session events to log, update state and character files |
 | `/dnd end` | Save session, append recap, stop display companion |
@@ -167,6 +167,15 @@ Once loaded, type naturally — no `/dnd` prefix needed. The DM interprets every
 ## Narrative Arc System
 
 Both campaign modes use the same six-beat three-act structure tracked in `state.md`. The arc type determines how it's populated and enforced.
+
+### Structural foundations
+
+The dynamic arc draws from several overlapping frameworks in story structure and tabletop adventure design:
+
+- **Three-act structure** — the classical division of setup, confrontation, and resolution, present in dramatic theory from Aristotle through modern screenwriting. The six beats are two per act, giving each phase a complicating turn rather than a flat arc through it.
+- **Dan Harmon's Story Circle** — an 8-step story engine (derived from Campbell's Hero's Journey) that emphasizes a character crossing into an unfamiliar situation, finding something, paying a price to take it, and returning changed. The Midpoint Shift and All Is Lost beats are direct reflections of this — the moment the story reveals its actual shape, and the cost the protagonist must pay before they can act on it.
+- **Beats as consequences, not events** — the key adaptation for tabletop play. In a scripted story, a beat is a scene ("the hero finds the letter"). In a tabletop arc, a beat is a consequence ("the party realizes the threat was built to outlast any single person"). Dozens of different scenes could deliver the same consequence. This gives the DM genuine flexibility while keeping the story's shape committed.
+- **Hub-and-spoke adventure structure** — used by the structured arc type for non-linear published modules. Players approach each spoke location in any order; each spoke has its own chapter beats; the central convergence point doesn't open until all required spokes resolve. This matches how most well-designed published campaigns are actually constructed and lets Claude enforce beats at chapter granularity without forcing a linear path.
 
 ### Improvised (type: dynamic)
 

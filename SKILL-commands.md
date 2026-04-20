@@ -141,9 +141,9 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
 
 ## `/dnd import <filepath> [campaign-name]`
 
-Import a pre-written campaign from a source file (PDF, MD, TXT, Obsidian note, DOCX) and create a playable campaign from it.
+Import a pre-written campaign from a source file (PDF, MD, TXT, DOCX) and create a playable campaign from it.
 
-**Supported file types:** `.pdf` `.md` `.txt` `.obsidian` `.markdown` `.docx`
+**Supported file types:** `.pdf` `.md` `.txt` `.markdown` `.docx`
 
 ### Step 1 — Extract source text
 ```bash
