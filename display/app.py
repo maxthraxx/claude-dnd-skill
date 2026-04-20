@@ -722,16 +722,28 @@ _text_log_lock = threading.Lock()
 # ─── Session tail buffer ──────────────────────────────────────────────────────
 # Rolling buffer of the last 30 text events — written to session_tail.json after
 # every /chunk POST so it survives crashes. Read at /dnd load for display replay.
-TAIL_FILE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), "session_tail.json")
+# Path is campaign-specific so tails from different campaigns don't overwrite each other.
+_TAIL_FALLBACK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "session_tail.json")
 _tail_buffer: deque = deque(maxlen=30)
 _tail_lock   = threading.Lock()
+
+
+def _get_tail_file() -> str:
+    """Return the campaign-specific tail path, or the fallback app-dir path."""
+    try:
+        camp = open(CAMP_FILE).read().strip()
+        if camp:
+            return os.path.expanduser(f"~/.claude/dnd/campaigns/{camp}/session_tail.json")
+    except Exception:
+        pass
+    return _TAIL_FALLBACK
 
 
 def _persist_tail() -> None:
     try:
         with _tail_lock:
             data = list(_tail_buffer)
-        with open(TAIL_FILE, "w") as f:
+        with open(_get_tail_file(), "w") as f:
             json.dump(data, f)
     except Exception:
         pass
@@ -739,9 +751,10 @@ def _persist_tail() -> None:
 
 def _load_tail() -> None:
     try:
-        with open(TAIL_FILE) as f:
+        with open(_get_tail_file()) as f:
             data = json.load(f)
         with _tail_lock:
+            _tail_buffer.clear()
             for item in data[-30:]:
                 _tail_buffer.append(item)
     except Exception:
@@ -1224,10 +1237,13 @@ def stats():
             return "", 204
 
     # Write active campaign name so dm_help.py always reads the current campaign.
+    # Also reload the tail buffer from the new campaign's session_tail.json so
+    # display replay at /dnd load shows the correct campaign's last session.
     if "campaign" in data:
         try:
             with open(CAMP_FILE, "w") as f:
                 f.write(str(data["campaign"]).strip())
+            _load_tail()
         except Exception:
             pass
 
