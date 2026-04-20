@@ -15,13 +15,20 @@ Built for groups who want a real DM experience without needing one at the table.
 
 You run `/dnd load my-campaign` in Claude Code. Claude becomes your DM — rolling dice, voicing NPCs, tracking HP and XP, and running combat. If you have a TV or tablet nearby, the **cinematic display companion** puts the narration on screen in real time — typewriter effect, atmospheric backgrounds that shift with the scene, a dynamic sky canvas, and a live party stat sidebar. Open it on any device on your network and everyone at the table can follow along. Players submit their actions from their phones; Claude picks them up automatically and runs the next turn.
 
-What separates this from a chatbot improvising a story is a set of [twelve applied behavioral standards](https://github.com/Bobby-Gray/claude-dnd-skill/blob/main/SKILL.md#what-makes-a-great-dm--applied-standards) enforced as hard constraints on every session. They cover the full range of what makes DM-ing genuinely difficult and the result is sessions that feel authored — where moments land, where the world has weight, and where your choices accumulate into a story that couldn't have happened to anyone else.
+There are two ways to play, and they serve different needs:
+
+**Improvised campaigns** — Claude generates the world from scratch and auto-creates a committed three-act narrative arc from the setting, factions, and threats it just built. The arc gives the story a defined shape without scripting what happens — beats are defined by consequence ("what changes") not by event, so Claude stays flexible on how each beat lands while committing to the fact that it must. The arc advances across sessions, can be revised when players redirect the story, and continues into a new arc when all six beats resolve. This is Claude as a full creative collaborator: world-builder, improv partner, and story architect in one.
+
+**Structured campaigns** — Use `/dnd import` to drop in a pre-written source (official WotC modules, published third-party campaigns, or a custom DM-written document in PDF, markdown, Obsidian, or DOCX format). Claude reads and chunks the source, extracts the structure type (linear, hub-and-spoke, or faction-web), and builds all campaign files automatically — acts, chapters, key story beats, telegraph scenes, NPCs, factions, locations, and quest hooks. The campaign runs with enforced deterministic structure: required beats must land in each chapter, Claude telegraphs before delivering them, and steers with world pressure rather than walls when players drift. Drop in the Lost Mine of Phandelver and Claude will run it chapter by chapter with the same twelve DM standards applied to every scene.
+
+Both modes share the same DM engine. The [twelve applied behavioral standards](https://github.com/Bobby-Gray/claude-dnd-skill/blob/main/SKILL.md#what-makes-a-great-dm--applied-standards) are enforced as hard constraints in every session regardless of which mode you're in — improvised or structured, the DM improvises within situations, lets choices matter, makes every NPC a person, and controls pace deliberately.
 
 It also manages a deep web of campaign data without overloading the LLM — coherent and complete, without burning tokens on context that isn't needed yet:
 
 - **DM instructions** — split across three files with staggered load timing; core rules always in the system prompt, script syntax and command procedures loaded once at session start
 - **Campaign data** — NPC roster indexed at load, full entries pulled only when a character becomes relevant; quest hooks and worldbuilding text in cold storage until called for
 - **Session history** — archived as continuity summaries, not raw transcripts; full campaign history available for reference without front-loading token weight
+- **Compaction resilience** — a compact Live State Flags block in `state.md` anchors faction stances, player cover, and NPC dispositions; re-read at any claim to keep world continuity grounded in source files rather than Claude's increasingly lossy impression of them
 
 A campaign can run dozens of sessions deep — with coherent recall of past events, NPC attitudes, and long-tail consequences — without the context bloat that forces other implementations to summarize, forget, or reset.
 
@@ -40,6 +47,9 @@ If you're on Claude Code, you're in the right place.
 ## Features
 
 - **Persistent campaigns** — state, NPCs, quests, and characters survive across sessions in plain markdown files
+- **Two campaign modes** — improvised (Claude generates world + dynamic arc) or structured (import pre-written material and enforce its beats)
+- **Dynamic narrative arc** — auto-generated at `/dnd new` from the world's threat, factions, and setting; three acts, six beats defined by consequence not event; arc tracked across sessions, revised when players redirect the story, continued into a new arc when complete
+- **Campaign import** — `/dnd import` accepts PDF, markdown, Obsidian, DOCX, or plain text; extracts structure type, acts, chapters, key beats, telegraph scenes, NPCs, factions, and quest hooks; builds all campaign files automatically
 - **Portable characters** — bring your character into any campaign; level up, grow your stat tree, and carry your inventory and loot — or start fresh each time
 - **Full D&D 5e mechanics** — initiative, attacks, saving throws, spell slots, XP, levelling up, short/long rests
 - **Atmospheric DM** — dark fantasy tone, distinct NPC voices, hidden rolls, a world that reacts to choices
@@ -108,10 +118,19 @@ pip3 install flask flask-cors numpy cryptography
 
 ## Quick Start
 
+**Improvised campaign** — Claude builds the world and generates a narrative arc:
+
 ```
-/dnd new my-campaign         # create a new campaign
+/dnd new my-campaign         # generates world seed, factions, NPCs, dynamic story arc
 /dnd character new           # create a character
-/dnd load my-campaign        # start a session (asks about display companion)
+/dnd load my-campaign        # start a session
+```
+
+**Structured campaign** — import a pre-written or published module:
+
+```
+/dnd import my-campaign path/to/module.pdf   # extract structure and build campaign files
+/dnd load my-campaign                        # start a session — Claude enforces the arc
 ```
 
 Once loaded, type naturally — no `/dnd` prefix needed. The DM interprets everything as in-game action.
@@ -122,7 +141,8 @@ Once loaded, type naturally — no `/dnd` prefix needed. The DM interprets every
 
 | Command | Description |
 |---------|-------------|
-| `/dnd new <name>` | Create a new campaign — generates world seed, NPCs, starting location |
+| `/dnd new <name>` | Create a new campaign — generates world seed, NPCs, starting location, and dynamic narrative arc |
+| `/dnd import <name> <source>` | Import a pre-written campaign from PDF, markdown, Obsidian, or DOCX; extracts structure and builds all campaign files |
 | `/dnd load <name>` | Load an existing campaign and enter DM mode |
 | `/dnd save` | Write session events to log, update state and character files |
 | `/dnd end` | Save session, append recap, stop display companion |
@@ -131,12 +151,43 @@ Once loaded, type naturally — no `/dnd` prefix needed. The DM interprets every
 | `/dnd recap` | In-character 3–5 sentence recap of the last session |
 | `/dnd world` | Display world lore |
 | `/dnd quests` | Show active quests and open threads |
+| `/dnd arc status` | Show the current narrative arc, completed beats, and steering notes |
+| `/dnd arc advance <beat>` | Mark a beat complete and update arc tracking (dynamic arcs only) |
+| `/dnd arc revise` | Revise outstanding beats when a player choice significantly redirects the story |
+| `/dnd arc new` | Generate a new arc from the consequences of a completed one |
 | `/dnd autorun on [seconds]` | Enable autorun mode — Claude drives the turn loop automatically |
 | `/dnd autorun off` | Return to manual mode |
 | `/dnd tutor on` | Enable tutor / learning mode for this session |
 | `/dnd tutor off` | Disable tutor / learning mode |
 | `/dnd data sync` | Rebuild bundled SRD dataset from upstream sources (only needed for new upstream content) |
 | `/dnd data status` | Show current dataset record counts and upstream SHA |
+
+---
+
+## Narrative Arc System
+
+Both campaign modes use the same six-beat three-act structure tracked in `state.md`. The arc type determines how it's populated and enforced.
+
+### Improvised (type: dynamic)
+
+Generated automatically at `/dnd new` from the world's threat, factions, and Three Truths. Beats are defined by `what_changes` — the narrative consequence that must land — not by a specific event. This gives the DM flexibility on *how* each beat arrives while committing to *that* it must.
+
+| Act | Beat | What it marks |
+|-----|------|---------------|
+| 1 | Inciting Incident | The threat becomes personal |
+| 1 | Complication | The problem is bigger than it first appeared |
+| 2 | Midpoint Shift | What the party thought they were doing changes |
+| 2 | All Is Lost | A genuine setback — something fails or collapses |
+| 3 | Final Confrontation | The decisive moment the campaign turns on |
+| 3 | Resolution | What's different about the world and characters after |
+
+Arc beats are tracked at `/dnd end` and marked complete via `/dnd arc advance`. When a major player choice redirects the story, `/dnd arc revise` updates outstanding beats to fit the new direction. When all six beats resolve, `/dnd arc new` generates a new arc from the consequences of the first — same world, new story question.
+
+### Structured (type: structured)
+
+Populated by `/dnd import` from the source material. Acts contain chapter-level key beats, telegraph scenes (setup scenes that naturally constrain choices toward each beat), and branching notes. Claude telegraphs before delivering any required beat, steers with world pressure rather than hard walls when players drift, and marks beats complete as each chapter resolves.
+
+The two arc types are mutually exclusive per campaign and fully compatible with all other systems — combat, XP, NPC attitudes, and display all behave identically regardless of arc type.
 
 ---
 
@@ -609,12 +660,12 @@ python3 scripts/character.py xp --level 2 --gained 150
 │   ├── app.py                # Flask SSE server
 │   ├── audio.py              # SFX synthesis and browser trigger (numpy)
 │   ├── autorun-wait.sh       # Blocking wait script for autorun mode
+│   ├── check_input.py        # Non-blocking player input queue poll (mid-turn check)
 │   ├── send.py               # Direct send for narration/dice/player actions
 │   ├── push_stats.py         # Character and combat stat updates
 │   ├── setup_tls.py          # Self-signed TLS cert generator for LAN mode
 │   ├── start-display.sh      # One-command display startup
 │   ├── dm_help.py            # On-demand DM hint generator (◈ button)
-│   ├── check_input.py        # Legacy player input queue reader
 │   ├── wrapper.py            # PTY wrapper (legacy — autorun preferred)
 │   ├── requirements.txt
 │   └── templates/
@@ -627,10 +678,12 @@ python3 scripts/character.py xp --level 2 --gained 150
     └── session-log.md
 
 ~/.claude/dnd/campaigns/<name>/
-├── state.md                  # Current location, party status, active quests
-├── world.md                  # World lore and setting details
+├── state.md                  # Current location, party status, active quests, arc tracking
+├── world.md                  # World lore, setting details, adventure nodes
 ├── npcs.md                   # NPC index with stat blocks and attitudes
-├── session-log.md            # Session history and recaps
+├── session-log.md            # Session history and recaps (last 2 sessions; older archived)
+├── session-log-archive.md    # Full session history archive
+├── session_tail.json         # Last session's display tail — replayed on load
 └── characters/
     ├── Aldric.md
     └── Mira.md
@@ -647,6 +700,7 @@ The skill is designed around a set of hard constraints, not aspirational notes:
 - **Economy of description** — two sharp sensory details beat a paragraph of exposition
 - **Every NPC is a person** — even minor characters get a verbal tic, a contradiction, a goal
 - **Hidden rolls stay hidden** — Perception, Insight, and Stealth roll silently; only the outcome is narrated (but results always appear on the display)
+- **The arc bends, never breaks** — when players redirect the story, beats revise to fit the new direction; the committed shape is a guide, not a cage
 
 ---
 
