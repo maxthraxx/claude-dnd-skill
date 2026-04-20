@@ -7,7 +7,7 @@ An unofficial D&D 5e Dungeon Master skill for [Claude Code](https://claude.ai/co
 
 Built for groups who want a real DM experience without needing one at the table.
 
-![Cinematic Display Demo](demo-v2.gif)
+![Cinematic Display Demo](screenshots/demo-v2.gif)
 
 ---
 
@@ -321,7 +321,7 @@ For iOS: open `http://<your-ip>:8080/cert.pem` in Safari → tap Allow → Setti
 
 ### Player Input from the Companion UI
 
-![Player input panel — staging an action from a phone](screenshot-player-input.png)
+![Player input panel — staging an action from a phone](screenshots/screenshot-player-input.png)
 
 Players open the companion in their phone browser. The **Party Input** panel at the bottom lets each player:
 
@@ -363,15 +363,15 @@ Hint blocks are **collapsed by default** — click or tap the header to expand. 
 - **DM Hint** (◈, collapsible) — skills worth attempting, visible options, what each path might cost
 - **Warning** (⚠, amber border) — flags irreversible choices before the player commits
 
-![Tutor mode intro hint](tutor-hint-intro.png)
+![Tutor mode intro hint](screenshots/tutor-hint-intro.png)
 
 Hints can surface contextual NPC and situation knowledge the DM would naturally flag:
 
-![Tutor hint with NPC context](tutor-hint-npc.png)
+![Tutor hint with NPC context](screenshots/tutor-hint-npc.png)
 
 Warnings use an amber border to distinguish high-stakes choices:
 
-![Tutor warning block](tutor-warning.png)
+![Tutor warning block](screenshots/tutor-warning.png)
 
 **Tutor mode (per-session)** — for new players who want continuous guidance, enable automatic hint blocks after every scene, decision point, and roll — no button needed. Adds ~10–20% token overhead per turn. Use the DM Help button instead for on-demand hints without the ongoing cost.
 
@@ -453,7 +453,7 @@ The browser caches each WAV after first fetch. SFX trigger naturally alongside t
 
 ### Live Character Sidebar
 
-![NPC dialogue block and character sidebar with faction panel](screenshot-npc-dialogue.png)
+![NPC dialogue block and character sidebar with faction panel](screenshots/screenshot-npc-dialogue.png)
 
 A fixed left sidebar shows live stats for all party members, updated automatically as play progresses.
 
@@ -502,13 +502,13 @@ python3 ~/.claude/skills/dnd/display/push_stats.py --world-time \
   '{"date":"7 Deepmonth 1312 CR","day_name":"Starday","time":"morning","season":"Deep Winter","weather":"overcast"}'
 ```
 
-![Character sidebar card](sidebar-card.png)
+![Character sidebar card](screenshots/sidebar-card.png)
 
 ### Clickable Character Sheet
 
 Click or tap any character card in the sidebar to open a full character sheet modal — attacks, features, and inventory at a glance. Works on desktop and on phones/tablets connected via LAN.
 
-![Character sheet modal](character-sheet-modal.png)
+![Character sheet modal](screenshots/character-sheet-modal.png)
 
 Include the `sheet` field when pushing stats on `/dnd load` to populate the full sheet:
 
