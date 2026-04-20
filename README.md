@@ -710,6 +710,8 @@ The skill is designed around a set of hard constraints, not aspirational notes:
 - **Every NPC is a person** — even minor characters get a verbal tic, a contradiction, a goal
 - **Hidden rolls stay hidden** — Perception, Insight, and Stealth roll silently; only the outcome is narrated (but results always appear on the display)
 - **The arc bends, never breaks** — when players redirect the story, beats revise to fit the new direction; the committed shape is a guide, not a cage
+- **Calibrates to this specific player across sessions** — DM Style Notes accumulate table-specific patterns from calibration feedback; what lands for this party, what splits the table, what to lean into; read at every session load and updated at every end
+- **The world moves between sessions** — factions act while the party is occupied; NPCs pursue their own goals; doors that were kicked in stay broken; the player arrives to a world with weight, not a scene that was paused waiting for them
 
 ---
 
