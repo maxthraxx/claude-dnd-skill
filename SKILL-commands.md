@@ -64,7 +64,7 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
      - `xp_award` key present → `send.py --xp-award '<json of the xp_award sub-dict>'`
      - `inspiration_award` key present → `send.py --inspiration-award '<name>'`
      - none of the above (plain DM narration) → `send.py` with text via stdin
-     This restores the last scene to the display before the recap. The tail is written continuously by `app.py` — it always contains the last session's final exchanges regardless of how the session ended.
+     This restores the last scene to the display before the recap. The tail is written continuously by `dnd-display-app.py` — it always contains the last session's final exchanges regardless of how the session ended.
    - Clear previous transcript: `python3 ~/.claude/skills/dnd/display/push_stats.py --clear`
    - Register active campaign for DM Help: `python3 ~/.claude/skills/dnd/display/push_stats.py --set-campaign <campaign-name>`
    - If autorun **yes** → write `autorun: true` to `state.md → ## Session Flags`; enter the autorun wait after the recap paragraph.
@@ -125,7 +125,7 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
    ```json
    [{"name":"Pale Court","standing":"Allied"},{"name":"The Kept","standing":"Hostile"}]
    ```
-   `standing` values: `Allied`, `Friendly`, `Neutral`, `Suspicious`, `Hostile`. If the field is omitted, `app.py` defaults it to `"Neutral"` and logs a warning to stderr — but always include it explicitly. Map prose from `state.md` to exact values (e.g. "deep ally" → `"Allied"`, "active hostile" → `"Hostile"`). Use `[]` to clear.
+   `standing` values: `Allied`, `Friendly`, `Neutral`, `Suspicious`, `Hostile`. If the field is omitted, `dnd-display-app.py` defaults it to `"Neutral"` and logs a warning to stderr — but always include it explicitly. Map prose from `state.md` to exact values (e.g. "deep ally" → `"Allied"`, "active hostile" → `"Hostile"`). Use `[]` to clear.
 
    The faction panel only appears when at least one faction is present — do not skip this push.
 
@@ -260,7 +260,7 @@ If nothing changed in a category this session, leave it as-is. If a fact was wro
 
 Then update `## Faction Moves` in state.md: for each active faction, answer *"what did they do while the party was occupied?"* One line per faction — even if nothing visible yet. Confirm what was written.
 
-**Session tail archive:** `app.py` continuously writes `~/.claude/skills/dnd/display/session_tail.json` — this is always current. At save time, also write the tail as a named session snapshot: `~/.claude/dnd/campaigns/<name>/session-tail.md` (SKILL-side human-readable, already done by the DM narration) **and** verify `session_tail.json` exists and is non-empty. If it is missing or empty (e.g. the display was not running), write it from the last narration block and player inputs available in context.
+**Session tail archive:** `dnd-display-app.py` continuously writes `~/.claude/skills/dnd/display/session_tail.json` — this is always current. At save time, also write the tail as a named session snapshot: `~/.claude/dnd/campaigns/<name>/session-tail.md` (SKILL-side human-readable, already done by the DM narration) **and** verify `session_tail.json` exists and is non-empty. If it is missing or empty (e.g. the display was not running), write it from the last narration block and player inputs available in context.
 
 **Session log archival (run on every save after session count > 3):**
 session-log.md keeps only the **2 most recent full session entries**. Older entries move to `session-log-archive.md` (append, never delete). Before archiving each entry, extract a 3–5 bullet continuity summary and write it to `## Continuity Archive` in state.md. Format:

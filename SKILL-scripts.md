@@ -369,7 +369,7 @@ pip3 install -r requirements.txt
 ```
 Terminal (run claude directly — no wrapper needed)
     ↓ send.py calls per narration block / dice roll / stat change
-Flask on https://localhost:5001 (app.py — HTTPS, self-signed cert)
+Flask on https://localhost:5001 (dnd-display-app.py — HTTPS, self-signed cert)
     ↓ Server-Sent Events
 Browser tab → Chromecast → TV
 ```
@@ -394,4 +394,4 @@ Open the browser tab and Chromecast it *before* running `/dnd load` so the brows
 
 **Scene detection:** server scans narration for keywords and shifts background gradient + particle type (17 scenes: tavern, dungeon, forest, crypt, arcane, ocean, etc.). Crossfades over ~2.5 s.
 
-**Audio (Python-side):** `audio.py` auto-imported by `app.py`. Two toggles: Ambient (looping soundscape) and Effects (one-shot SFX). Both default off. Scene changes crossfade the ambient loop. All synthesis via numpy — no audio files needed.
+**Audio (Python-side):** `audio.py` auto-imported by `dnd-display-app.py`. Two toggles: Ambient (looping soundscape) and Effects (one-shot SFX). Both default off. Scene changes crossfade the ambient loop. All synthesis via numpy — no audio files needed.

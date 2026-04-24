@@ -10,6 +10,7 @@ Context hierarchy (most → least current):
   1. text_log.json   — real-time scene (last N display blocks)
   2. session-log.md  — current session events and open threads (authoritative for in-session state)
   3. state.md        — campaign-level persistent context (targeted sections only; may lag)
+  4. arc context     — current beat's consequence (DM-only; shapes hint tone, never revealed)
 
 Lock lifecycle:
   Flask creates .help-lock (O_EXCL) before spawning this process.
@@ -101,6 +102,88 @@ def get_campaign_state(campaign: str) -> str:
     return "\n\n".join(parts)
 
 
+def get_arc_context(campaign: str) -> str:
+    """
+    Extract the current beat's 'what_changes' from the Campaign Arc YAML block in state.md.
+    Returns a one-line thematic summary of what consequence is building — for the hint
+    model to shape tone toward readiness, not prevention.
+    Returns empty string if arc section is missing or unparseable.
+    """
+    state_path = _find_campaign(campaign) / "state.md"
+    if not state_path.exists():
+        return ""
+
+    text = state_path.read_text()
+
+    # Extract the YAML block inside ## Campaign Arc
+    arc_match = re.search(
+        r"^## Campaign Arc\s*```yaml(.*?)```",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not arc_match:
+        return ""
+
+    yaml_text = arc_match.group(1)
+
+    # Pull current_beat id
+    beat_id_match = re.search(r"^current_beat:\s*[\"']?(\S+?)[\"']?\s*$", yaml_text, re.MULTILINE)
+    if not beat_id_match:
+        return ""
+    current_beat_id = beat_id_match.group(1).strip("\"'")
+
+    # Find the beat block with that id — look for "id: <current_beat_id>"
+    # then scan forward for what_changes
+    beat_block_match = re.search(
+        rf"- id:\s*[\"']?{re.escape(current_beat_id)}[\"']?(.*?)(?=\s*- id:|\Z)",
+        yaml_text,
+        re.DOTALL,
+    )
+    if not beat_block_match:
+        return ""
+
+    beat_block = beat_block_match.group(1)
+
+    # Extract what_changes — may be multi-line with leading spaces
+    wc_match = re.search(r'what_changes:\s*["\']?(.*?)(?=["\']?\s*\w+:|$)', beat_block, re.DOTALL)
+    if not wc_match:
+        return ""
+
+    what_changes = wc_match.group(1).strip().strip("\"'")
+    # Collapse whitespace from multi-line YAML values
+    what_changes = re.sub(r"\s+", " ", what_changes).strip()
+
+    if not what_changes:
+        return ""
+
+    # Also extract world_pressure — the mechanism the beat arrives through.
+    # This tells the hint what the party can actually engage with.
+    wp_match = re.search(r'world_pressure:\s*["\']?(.*?)(?=["\']?\s*\w+:|$)', beat_block, re.DOTALL)
+    world_pressure = ""
+    if wp_match:
+        world_pressure = re.sub(r"\s+", " ", wp_match.group(1).strip().strip("\"'")).strip()
+
+    # Also extract label for context
+    label_match = re.search(r'label:\s*["\']?(.*?)["\']?\s*$', beat_block, re.MULTILINE)
+    label = label_match.group(1).strip() if label_match else ""
+
+    lines = [
+        "Current story beat (DM only — never quote or reference directly):",
+    ]
+    if label:
+        lines.append(f"  Beat label: {label}")
+    lines.append(f"  What must change: {what_changes}")
+    if world_pressure:
+        lines.append(f"  How it arrives (the node the party can engage with): {world_pressure}")
+    lines.append(
+        "Use this to: (1) shape hint tone toward preparation, not urgency to prevent; "
+        "(2) surface the specific pressures or decisions that matter before this lands — "
+        "hint at the kind of positioning, alliances, or information that will matter when it does."
+    )
+
+    return "\n".join(lines)
+
+
 def get_session_context(campaign: str) -> str:
     """
     Extract the most recent session entry from session-log.md.
@@ -127,7 +210,7 @@ def get_session_context(campaign: str) -> str:
     return "\n".join(lines)
 
 
-def call_claude(display: str, state: str, session: str) -> str:
+def call_claude(display: str, state: str, session: str, arc: str) -> str:
     """Call claude -p (non-interactive print mode) — uses Claude Code's own auth."""
     system = (
         "You are a D&D 5e Dungeon Master generating a brief in-character DM hint. "
@@ -145,9 +228,20 @@ def call_claude(display: str, state: str, session: str) -> str:
         "Rules: 2-4 sentences maximum. Write from inside the fiction — no rule names, "
         "no meta-language. Never reveal information the character could not know. "
         "If there is genuinely nothing useful to add, respond with exactly: SKIP"
+        "\n\n"
+        "ARC TONE INSTRUCTION (DM-only — never name or quote this to the player): "
+        "You are also given the thematic consequence that the story is building toward. "
+        "Do not reveal it, reference it, or hint that it can be prevented. "
+        "Instead, let it shape the emotional register of your hint: nudge the player toward "
+        "positioning and preparation rather than urgency to stop something. "
+        "The question to plant is not 'how do I prevent this?' but 'what do I need in place "
+        "when this changes?' A hint that does this well feels like atmosphere, not a warning — "
+        "the difference between 'sometimes plans don't outrun the world' and 'hurry, stop X'."
     )
 
     prompt_parts = []
+    if arc:
+        prompt_parts.append(f"ARC CONTEXT (DM-only — shape tone only, never reveal):\n{arc}")
     if state:
         prompt_parts.append(f"CAMPAIGN STATE:\n{state}")
     if session:
@@ -194,11 +288,12 @@ def main() -> None:
         display = get_recent_display(10)
         state   = get_campaign_state(args.campaign)
         session = get_session_context(args.campaign)
+        arc     = get_arc_context(args.campaign)
 
         if not display and not state and not session:
             return
 
-        hint = call_claude(display, state, session)
+        hint = call_claude(display, state, session, arc)
         if hint.strip().upper() == "SKIP":
             return
 
