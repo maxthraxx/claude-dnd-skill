@@ -213,6 +213,8 @@ python3 ~/.claude/skills/dnd/scripts/dice.py d20+4 | python3 ~/.claude/skills/dn
 Format: `[Name] — [Skill] ([context]): d20+MOD = RESULT → [short outcome]`
 Send the roll line **immediately after rolling**, before writing the narration response.
 
+⚠ **Heredoc gotcha:** The `<< 'DNDEND'` form (single-quoted terminator) **blocks variable expansion** — `${ROLL}` will be sent literally, not expanded. Use it for static narration, but for dice/anything with shell variables, **always use `echo`/`printf` piping** (as in the examples above) or an unquoted `<< DNDEND` heredoc. Mixing the two is the most common send-formatting bug.
+
 *NPC dialogue* — when an NPC speaks more than a line, send as `--npc <name>`:
 ```bash
 python3 ~/.claude/skills/dnd/display/send.py --npc "Septemous" << 'DNDEND'

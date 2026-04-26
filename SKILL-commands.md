@@ -57,7 +57,7 @@ Full step-by-step procedures for all `/dnd` slash commands. Load this file at `/
    - If display **yes**:
      - LAN **yes** → `bash ~/.claude/skills/dnd/display/start-display.sh --lan`, print both URLs, set `_display_running = true`
      - LAN **no** → `bash ~/.claude/skills/dnd/display/start-display.sh`, print URL, set `_display_running = true`
-   - **Session tail replay:** before clearing the display, check if the campaign's `session_tail.json` exists. If it does, read it. After `--clear` and full stats push (step 4 below), replay the tail by sending each entry via the appropriate `send.py` flag. Entry type → flag mapping:
+   - **Session tail replay:** before clearing the display, check if the campaign's `session_tail.json` exists. The campaign-side path is the authoritative one — `~/.claude/dnd/campaigns/<name>/session_tail.json`. **Do NOT read** the legacy/fallback at `~/.claude/skills/dnd/display/session_tail.json`; that file may exist from older sessions or other campaigns and will mislead the replay. If the campaign-side file does not exist, skip replay (display starts blank). If it does, read it. After `--clear` and full stats push (step 4 below), replay the tail by sending each entry via the appropriate `send.py` flag. Entry type → flag mapping:
      - `player` key present → `send.py --player <name>` with text via stdin
      - `npc` key present → `send.py --npc <name>` with text via stdin
      - `dice` key present → `send.py --dice` with text via stdin
