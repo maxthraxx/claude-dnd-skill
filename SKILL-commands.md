@@ -333,6 +333,17 @@ Persistence is via shell rc on macOS/Linux and via `setx` on Windows. Existing c
 
 ---
 
+## `/dnd update [--check]`
+
+Pull the latest skill changes from `origin/main`.
+
+- No args → `python3 ~/.claude/skills/dnd/scripts/update_skill.py` and stream output (script prompts before pulling).
+- `--check` → `python3 ~/.claude/skills/dnd/scripts/update_skill.py --check` — report status without pulling.
+- The script refuses to update if the working tree is dirty and uses `--ff-only` so it never silently merges divergent history.
+- After a successful pull, remind the user to restart Claude Code so the new `SKILL.md` and `SKILL-commands.md` are reloaded.
+
+---
+
 ## `/dnd display [start|stop|status]`
 - `start` → ask LAN mode [y/n]; run `bash ~/.claude/skills/dnd/display/start-display.sh [--lan]`; print URL(s)
 - `stop` → `kill $(cat ~/.claude/skills/dnd/display/app.pid) 2>/dev/null && rm -f ~/.claude/skills/dnd/display/app.pid`
