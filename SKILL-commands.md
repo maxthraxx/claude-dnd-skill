@@ -320,6 +320,19 @@ Dataset is bundled at `~/.claude/skills/dnd/data/dnd5e_srd.json` (1453 records: 
 
 ---
 
+## `/dnd path [<new-path> | reset]`
+
+View or configure where campaign and character data is stored. Wraps the
+`DND_CAMPAIGN_ROOT` env var.
+
+- No args → `python3 ~/.claude/skills/dnd/scripts/path_config.py` and show output.
+- New path → `python3 ~/.claude/skills/dnd/scripts/path_config.py set <path>`. Confirm to user, then remind them the change only takes effect in new shells (or after they `source` their rc on macOS/Linux).
+- `reset` → `python3 ~/.claude/skills/dnd/scripts/path_config.py reset`.
+
+Persistence is via shell rc on macOS/Linux and via `setx` on Windows. Existing campaigns are not auto-migrated; `paths.find_campaign()` handles legacy fallback + copy-on-access.
+
+---
+
 ## `/dnd display [start|stop|status]`
 - `start` → ask LAN mode [y/n]; run `bash ~/.claude/skills/dnd/display/start-display.sh [--lan]`; print URL(s)
 - `stop` → `kill $(cat ~/.claude/skills/dnd/display/app.pid) 2>/dev/null && rm -f ~/.claude/skills/dnd/display/app.pid`
